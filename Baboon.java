@@ -25,6 +25,10 @@ public class Baboon implements Steppable
 	int gestationRemaining = 0; //counts down the gestation period (300 days) if pregnant
 	HashMap<Baboon, Integer> matingHistory; //Records mating events during the fertile period
 	
+	//Dominance instance variables for males
+	double fightingAbility; 
+	int dominanceRank;
+	
 	
 	public Baboon(Environment state, boolean male, int age, int x, int y)
 	{
@@ -298,12 +302,6 @@ public class Baboon implements Steppable
 		 */
 	}
 	
-	// Placeholder for updating male dominance (e.g., based on age or other factors).
-    public void updateDominance() {
-        if (!male) return;
-        // Implement dominance update logic here.
-    }
-    
     // --- The Step Method ---
     // In each simulation step, baboons update their state:
     // - Females update their reproductive cycle.
@@ -326,10 +324,6 @@ public class Baboon implements Steppable
 			cycleUpdate();
 		}
 		
-		if(male)
-		{
-			updateDominance();
-		}
 		
 		age++;
 		
