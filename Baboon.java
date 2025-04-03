@@ -3,6 +3,7 @@ import sim.engine.SimState;
 import sim.engine.Steppable;
 import sim.engine.Stoppable;
 import sim.util.Bag;
+import java.util.HashMap;
 
 public class Baboon implements Steppable
 {
@@ -19,6 +20,11 @@ public class Baboon implements Steppable
 	Environment state;
 	public Stoppable event;
 	
+	//Reproduction instance variables(for females only)
+	int cycleDay = 1; //tracks current day of 33-day reproductive cycle
+	int gestationRemaining = 0; //counts down the gestation period (300 days) if pregnant
+	HashMap<Baboon, Integer> matingHistory; //Records mating events during the fertile period
+	
 	
 	public Baboon(Environment state, boolean male, int age, int x, int y)
 	{
@@ -28,8 +34,15 @@ public class Baboon implements Steppable
 		this.x = x;
 		this.y = y;
 		
+		if(!male)
+		{
+			cycleDay = 1; //start at day 1 of the cycle... ***change this to start at random point in the cycle***
+			gestationRemaining = 0; //not pregnant initially
+			matingHistory = new HashMap<>(); //Initialize an empty mating history
+		}
 	}
 	
+	//Method for handling agent death, remove the baboon from the schedule and its group
 	public void die(Environment state)
 	{
 		event.stop();
@@ -37,6 +50,7 @@ public class Baboon implements Steppable
 	}
 			
 	
+	//getters and setters for age, sex, and group
 	public int getAge() {
 		return age;
 	}
@@ -116,36 +130,160 @@ public class Baboon implements Steppable
 		}
 		
 	}
+	
+	
+	// --- Reproduction Methods for Female Baboons ---
 
 	
-	//need cycling and reproduction method logic
+	//Updates the reproductive cycle of female agents each time step
+	//First updates the cycle day, then records mating events in the fertile window, then determines if the pregnancy occurs at the end of the fertile period.
+	//Manages gestation.
+	
 	public void cycleUpdate()
 	{
-		/*
-		 * update cycle day each time step
-		 * 
-		 * check if fertile, if fertile pair with male
-		 * 
-		 * update copulation matrix
-		 * 
-		 */
+		// Ensures method only applies to females
+		if(male) return;
+		
+		// If currently pregnant, decrement gestation
+		if(gestationRemaining > 0)
+		{
+			gestationRemaining--;
+			if(gestationRemaining == 0) //When gestation is complete, give birth
+			{
+				giveBirth();
+				cycleDay = 1;
+				matingHistory.clear();
+			}
+			return;
+			
+		}
+		
+		//if agent is not male and not pregnant, update the cycle day
+		cycleDay++;
+		
+		//If in the fertile period (days 27-33), mating events are recorded in the matingHistory data structure to use for paternity calculations
+		if (cycleDay >= 27 && cycleDay <= 33)
+		{
+			//need to add code here for updating the paternityCalculation hashMap based on coalition game outcomes
+		}
+		
+		if(cycleDay > 33)
+		{
+			reproduce();
+			cycleDay = 1; //Reset the cycle regardless of outcome
+			matingHistory.clear();
+			
+		}
+		
 	}
 	
+	//Determines if the female becomes pregnant and selects the father of offspring
 	public void reproduce()
 	{
-		/*
-		 * Upon exiting cycle, calculate probability female becomes pregnant
-		 * 
-		 * if female becomes pregnant, determine probabilistically which consort male becomes father
-		 * 
-		 * female gestates, gives birth, restarts cycling
-		 */
+		//ensures the method is for females only
+		if(male) return; 
+		
+		//If no mating events have been recorded, no pregnancy can occur
+		//extremely unlikely edge case but should be accounted for so it does not break the simulation
+		if(matingHistory == null || matingHistory.isEmpty())
+		{
+			return;
+		}
+		
+		//If the agent is female and does have a history of copulations with a male in the previous cycle
+		//Determine baseline probability of becoming pregnant at the end of the cycle
+		double pregnancyProbability = 0.5; // ***adjust this to reflect biological system***
+		if(state.random.nextDouble() < pregnancyProbability)
+		{
+			//pregnancy occurs
+			int totalMatingCount = 0; //counter for calculating total number of recorded reproductive events
+			for(Integer count : matingHistory.values())
+			{
+				totalMatingCount += count;
+			}
+			
+			if(totalMatingCount == 0) //guard against divide by zero error
+			{
+				return;
+			}
+			
+			//Use weighted random selection algorithm to determine which male will sire offspring based on number of copulations
+			//currently, male that sires offspring is selected based on mating frequency
+			// *** consider weighting paternity determination by frequency of copulations AS WELL AS timeframe when copulations occured
+			int randomChoice = state.random.nextInt(totalMatingCount) + 1; //choose a random number between 1 : totalMateCount inclusive
+			int cumulative = 0; 
+			Baboon father = null;
+			for(Baboon male : matingHistory.keySet()) //for each male in the hashMap
+			{
+				cumulative += matingHistory.get(male); //add the number of times they mated to the cumulative counter one by one
+				if(randomChoice <= cumulative) //if the value of the random number selected is less than or equal to cumulative at that stage of the for loop
+				{
+					father = male; //that male becomes the father
+					break;
+				}
+			}
+			
+			//Begin the gestation period
+			gestationRemaining = 300;
+			
+		}
+		else
+		{
+			return; // if agent does not become pregnant, exit the reproduce method
+		}
 	}
 	
-	//dispersal method for newborn males
-	public void maleImmgration()
+	
+	//Handles agent birthing event, creates a new baboon agent
+	public void giveBirth()
 	{
-		//newborn male immigration method?
+		//Calculate the probability that a newborn will be female (OSR in baboons is between 2-3 adult females for every male)
+		//To abstract away high male mortality rate in the simulation, we will just use a 2.5:1 sex ratio at birth of females to males
+		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
+		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
+		
+		Baboon newborn = new Baboon(state, newbornIsMale, 0, group.x, group.y);
+		if(newbornIsMale)
+		{
+			//For newborn males, trigger migration event
+			newborn.maleImmigration();
+			
+		}
+		else
+		{
+			//for newborn females, add them to the current group
+			group.members.add(newborn);
+		}
+		
+		// Schedule the newborn for stepping in the simulation
+		newborn.event = state.schedule.scheduleRepeating(newborn);
+	}
+	
+	
+	/// --- Methods for Males ---
+	
+	//dispersal method for newborn males
+	public void maleImmigration()
+	{
+		//Use findGroupNearest method to find a new group
+		Group newGroup = findGroupNearest(state, x, y, state.sparseSpace.TOROIDAL);
+		
+		//If a new group is found, proceed with migration
+		if(newGroup != null)
+		{
+			//remove the baboon from its current group
+			group.members.remove(this);
+			
+			//Update the baboon's spatial coordinate to match the new group's location
+			this.x = newGroup.x;
+			this.y = newGroup.y;
+			
+			//Set the baboons group reference to the new group
+			setGroup(newGroup);
+			
+			//Add the baboon to the new group's member list
+			newGroup.members.add(this);
+		}
 	}
 	
 	//male strategy genotype
@@ -159,6 +297,18 @@ public class Baboon implements Steppable
 		 * males must have coalition formation gene in order to solicit/participate in a coalition
 		 */
 	}
+	
+	// Placeholder for updating male dominance (e.g., based on age or other factors).
+    public void updateDominance() {
+        if (!male) return;
+        // Implement dominance update logic here.
+    }
+    
+    // --- The Step Method ---
+    // In each simulation step, baboons update their state:
+    // - Females update their reproductive cycle.
+    // - Males update their dominance.
+    // - Individuals check for mortality.
 
 
 	@Override
@@ -167,9 +317,19 @@ public class Baboon implements Steppable
 		if(age >= maxAge)
 		{
 			die(this.state);
+			return;
 		}
 		
-		//need logic for reproduction
+		//update female reproduction
+		if(!male)
+		{
+			cycleUpdate();
+		}
+		
+		if(male)
+		{
+			updateDominance();
+		}
 		
 		age++;
 		
