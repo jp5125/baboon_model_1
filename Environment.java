@@ -59,6 +59,9 @@ public class Environment extends SimStateSweep
 		super(seed, observer);
 	}
 	
+	
+	// ** This method needs to be reworked so groups start with different numbers of agents **
+	// ** Groups should have rougly similar OSRs (2 females for every male on average) **
 	public void makeGroups()
 	{
 		int m = n/groups; //number of agents in each group at genesis
