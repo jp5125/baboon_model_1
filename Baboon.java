@@ -302,11 +302,16 @@ public class Baboon implements Steppable
 		 */
 	}
 	
-    // --- The Step Method ---
-    // In each simulation step, baboons update their state:
-    // - Females update their reproductive cycle.
-    // - Males update their dominance.
-    // - Individuals check for mortality.
+    /* --- The Step Method ---
+     In each simulation step, baboons update their state:
+	 - Agents die if too old
+     - Females update their reproductive cycle.
+     - New agents are born
+     - Newborn males immigrate
+     - Newborn females begin cycling
+     - **Male dominance is updated at the group level**
+    */
+     
 
 
 	@Override
