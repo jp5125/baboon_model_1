@@ -116,37 +116,28 @@ public class Group implements Steppable
 		for(int rank = 0; rank < males.size(); rank++)
 		{
 			Baboon male = males.get(rank);
-			male.dominanceRank = rank + 1;
+			male.dominanceRank = rank + 1; //rank 1 should be highest dominance rank
 		}
 	}
 	
-	// Age-fighting ability function based on the figure
+	// Age-fighting ability function based on Noe 1994
 	public double calculateFightingAbility(int age) 
 	{
 	    /*
-	    This function should follow the developmental trajectory from the figure:
-	    
-	    - Rapidly increases to peak after migration (e.g., between ages 8–10).
-	    - Peaks around early adulthood (e.g., 10–12 years).
-	    - Slowly declines afterward, reducing fighting ability and rank.
-	    
-	    Example simplified formula:
-	    - Peak fighting ability at age ~10-12, then linear/exponential decline.
-	    - You can refine the exact equation later based on biological data.
+	    - Upon migrating, quickly rise in rank (to top or top 2 spots)
+	    - fighting ability starts very high, drops over time as male ages
+	    - As new young males join the group, males drop in dominance ranking
 	    */
 	    
-	    double peakAge = 11.0;      // Age at peak fighting ability
-	    double maxAbility = 1.0;    // Maximum fighting ability (normalized)
-	    double declineRate = 0.1;   // How quickly fighting ability declines after peak
+		
+		//placeholder function for fighting ability calculation, need to figure out implementation of this to be more biologically accurate
 	    
-	    if (age <= peakAge) {
-	        // Younger males increase rapidly in strength
-	        return (age / peakAge) * maxAbility;
-	    } else {
-	        // Older males decline steadily after the peak
-	        double ability = maxAbility - ((age - peakAge) * declineRate);
-	        return Math.max(ability, 0); // fighting ability cannot be negative
-	    }
+	    double maxAbility = 1.0;    // Maximum fighting ability at age 0 (first migration)
+	    double declineStartAge = 0; //After migrating, fighting ability starts declining 
+	    double declineRate = 0.05;   // How quickly fighting ability declines after peak (5% per year currently, change to reflect model system)
+	    
+	    double ability = maxAbility - (declineRate * age); //FA calculation, ***need to more clearly define age in the model***
+	    return Math.max(ability, 0.0); //prevents fighting ability from becoming negative
 	}	
 
 	public void coalitionGame()
@@ -197,6 +188,7 @@ public class Group implements Steppable
 		if(die(eState))
 			return;
 		groupDisperse(eState);
+		updateDominanceHierarchyArray();
 		coalitionGame();
 	}
 }
