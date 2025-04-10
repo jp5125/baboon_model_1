@@ -10,7 +10,7 @@ public class Environment extends SimStateSweep
 	public int n =10000; //number of baboons at simulation start
 	public int groups = 100; //number of groups at simulation start
 	public int minGroupSize = 12;
-	public int maxGroupSize = 120;
+	public int maxGroupSize = 120; //***adjust group sizes to capture that only adults are in population, no juveniles. thus total group size is smaller than in wild***
 	
 	//reproduction variables
 	public double mutationRate = 0.01; //rate of mutations in cooperative genotype

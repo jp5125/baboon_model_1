@@ -37,7 +37,7 @@ public class Group implements Steppable
 		}
 	}
 	
-	
+	//initial dominance hierarchy implementation, unsure of hidden bugs due to redrawing from a bag so this method was re-implemented using an ArrayList below
 	public void updateDominanceHierarchyBag() 
 	{
 		//First, we gather the male baboons from the set of all group members
@@ -59,7 +59,7 @@ public class Group implements Steppable
 		
 		for(int i = 0; i < males.numObjs; i++)
 		{
-			Baboon male = (Baboon)males.objs[i];
+			Baboon male = (Baboon)males.objs[i]; //***note for next week lab, is it redundant to recast this as a baboon as males should already contain objects of class baboon?***
 			
 			// Function to determine each males fighting ability based on age
 			male.fightingAbility = calculateFightingAbility(male.age);
@@ -84,6 +84,7 @@ public class Group implements Steppable
 	    } 
     }
 	
+	//Uses an ArrayList to keep track of the dominance hierarchy instead of a bag to avoid ordering errors with repeatedy drawing from a bag
 	public void updateDominanceHierarchyArray()
 	{
 		//First, collect all male baboons from the members bag and put into ArrayList

@@ -4,6 +4,7 @@ import sim.engine.Steppable;
 import sim.engine.Stoppable;
 import sim.util.Bag;
 import java.util.HashMap;
+import ec.util.MersenneTwisterFast;
 
 public class Baboon implements Steppable
 {
@@ -25,9 +26,11 @@ public class Baboon implements Steppable
 	int gestationRemaining = 0; //counts down the gestation period (300 days) if pregnant
 	HashMap<Baboon, Integer> matingHistory; //Records mating events during the fertile period
 	
-	//Dominance instance variables for males
-	double fightingAbility; 
-	int dominanceRank;
+	//Variables for males
+	double fightingAbility; //double between 1.0 and 0.0, drops as males age
+	int dominanceRank; //calculated based on comparisons of fighting abilities of other males within a group
+	boolean hasCoalitionGene; //whether or not a male has the coalition gene
+	boolean fatherHasCoalitionGene; //whether or not a newborn male's father had the coalition gene
 	
 	
 	public Baboon(Environment state, boolean male, int age, int x, int y)
@@ -37,12 +40,30 @@ public class Baboon implements Steppable
 		this.age = age;
 		this.x = x;
 		this.y = y;
+		this.hasCoalitionGene = false;
+		this.fatherHasCoalitionGene = false;
 		
 		if(!male)
 		{
-			cycleDay = 1; //start at day 1 of the cycle... ***change this to start at random point in the cycle***
+			cycleDay = state.random.nextInt(33) + 1; //females are initialized at a random starting point in their cycle
 			gestationRemaining = 0; //not pregnant initially
 			matingHistory = new HashMap<>(); //Initialize an empty mating history
+		}
+		
+		initializeGenotype(0.05, state.random);
+		
+	}
+	
+	//utility method for initializing coalition genotype frequency in the initial population of males
+	public void initializeGenotype(double initialCoalitionFrequency, MersenneTwisterFast random)
+	{
+		if(male)
+		{
+			hasCoalitionGene = random.nextDouble() < initialCoalitionFrequency; //the frequency of males that get the coalition genotype on startup = initialCoalitionFreq
+		}
+		else
+		{
+			hasCoalitionGene = false; //females do not have coalition gene
 		}
 	}
 	
@@ -169,6 +190,7 @@ public class Baboon implements Steppable
 		if (cycleDay >= 27 && cycleDay <= 33)
 		{
 			//need to add code here for updating the paternityCalculation hashMap based on coalition game outcomes
+			//logic to be implemented in recordMating() and called here
 		}
 		
 		if(cycleDay > 33)
@@ -181,7 +203,7 @@ public class Baboon implements Steppable
 		
 	}
 	
-	//Determines if the female becomes pregnant and selects the father of offspring
+	//Determines if the female becomes pregnant and selects the father of offspring (paternity determination)
 	public void reproduce()
 	{
 		//ensures the method is for females only
@@ -230,6 +252,8 @@ public class Baboon implements Steppable
 			//Begin the gestation period
 			gestationRemaining = 300;
 			
+			this.fatherHasCoalitionGene = father.hasCoalitionGene; //true if the father had the coalition gene, false if not
+			
 		}
 		else
 		{
@@ -246,21 +270,54 @@ public class Baboon implements Steppable
 		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
-		Baboon newborn = new Baboon(state, newbornIsMale, 0, group.x, group.y);
-		if(newbornIsMale)
+		Baboon newborn = new Baboon(state, newbornIsMale, 0, group.x, group.y); //*** age needs to be fixed to represent that agents are born as adults ***
+		
+		if(newbornIsMale) //decide if male will have coalition gene or not
 		{
+			if(state.random.nextDouble() < state.mutationRate) //if a mutation occurs
+			{
+				newborn.hasCoalitionGene = !fatherHasCoalitionGene; //newborn has the coalition gene only if their father DIDNT have it
+			}
+			else //if mutation does not occur
+			{
+				newborn.hasCoalitionGene = fatherHasCoalitionGene; //newborn has the coalition gene if their father also has it
+			}
+			
+			//first, set newborn to its mothers group temporarily (because I removed it from its current group in maleImmigration method already)
+			newborn.setGroup(this.group);
+			this.group.members.add(newborn);
 			//For newborn males, trigger migration event
 			newborn.maleImmigration();
 			
 		}
 		else
 		{
+			//if the newborn is female
+			newborn.hasCoalitionGene = false; //newborn does not have the coalition gene
 			//for newborn females, add them to the current group
 			group.members.add(newborn);
 		}
 		
 		// Schedule the newborn for stepping in the simulation
 		newborn.event = state.schedule.scheduleRepeating(newborn);
+		
+		//clear father genotype information after birth
+		fatherHasCoalitionGene = false;
+	}
+	
+	public void recordMating(Baboon male)
+	{
+		/*
+		 * A method should be made to record which males mated with a given female, however this introduces an issue.
+		 * 
+		 * Males do not have unique identifiers which makes tracking paternity a challenge.
+		 * 
+		 * One option is to just track male strategy genotype (coalition gene or no)
+		 * 
+		 * Another is to track the strategy which was used to obtain consortship (high rank, coalition)
+		 * 
+		 * A third is to create a unique ID system for each male to track paternities
+		 */
 	}
 	
 	
