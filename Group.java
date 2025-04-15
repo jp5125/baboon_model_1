@@ -158,16 +158,27 @@ public class Group implements Steppable
 		 */
 	}
 	
-	public void groupDisperse(Environment state)
+	public void groupDisperse(Environment state) 
 	{
-		if(members.numObjs < state.minGroupSize)
-		{
-			Baboon b = (Baboon)members.objs[0]; // ***does this need to be handled differently since groups in this model can be larger than 2 individuals?***
-			b.groupDisperse(state);
-			die(state);
-			System.out.print("Group dispersed");
-		}
-		
+	    if (members.numObjs < state.minGroupSize) 
+	    {
+	        Group newGroup = state.findGroupNearest(this.x, this.y, state.sparseSpace.TOROIDAL);
+	        if (newGroup == null) return;
+
+	        for (int i = 0; i < members.numObjs; i++) 
+	        {
+	            Baboon b = (Baboon) members.objs[i];
+	            b.x = newGroup.x;
+	            b.y = newGroup.y;
+	            b.setGroup(newGroup);
+	            newGroup.members.add(b);
+	        }
+
+	        members.clear();
+	        state.sparseSpace.remove(this);
+	        event.stop();
+	        System.out.println("Group dispersed from (" + x + ", " + y + ") to (" + newGroup.x + ", " + newGroup.y + ")");
+	    }
 	}
 	
 	public boolean die(Environment state)

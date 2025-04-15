@@ -86,6 +86,39 @@ public class Environment extends SimStateSweep
 		}
 	}
 	
+	//utility method for finding nearest group in simulation. Used by Group.groupDisperse() and Baboon.maleImmigration()
+	public Group findGroupNearest(int x, int y, int mode)
+	{
+		if(sparseSpace.getAllObjects().numObjs < 2)
+			return null;
+		
+		Bag groups; //create an empty bag of other groups in the simulation
+		int radius = 1; //starting search radius
+		Group nearestGroup = null; // stores the nearest group upon completion of the method
+		
+		while(nearestGroup == null) //loop until a nearest group is found
+		{
+			groups = sparseSpace.getMooreNeighbors(x, y, radius, mode, false); //all groups that are within the moores neighborhood are added to the bag of neighbors
+			groups.shuffle(random); //randomly shuffles the order of the bag
+			
+			for(Object obj : groups) //this logic draws the first group from the bag of neighbors, sets it to nearestGroup, and breaks
+			{
+				Group g = (Group) obj; 
+				if(g.members != null && g.members.numObjs > 0)
+				{
+					nearestGroup = g;
+					break;
+				}
+			}
+			radius++; //increase the radius if no neighbors in the previous radius' moores neighborhood
+			if(radius > Math.max(gridWidth, gridHeight)) //stops search from expanding past the size of the environment
+			{
+				break;
+			}
+		}
+		return nearestGroup;
+	}
+	
 	public void start()
 	{
 		super.start();

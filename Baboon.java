@@ -102,61 +102,6 @@ public class Baboon implements Steppable
 		this.group = group;
 	}
 	
-	//finds group nearest to calling group if one exists
-	public Group findGroupNearest(Environment state, final int x, final int y, final int mode)
-	{
-		if(state.sparseSpace.getAllObjects().numObjs < 2)
-			return null;
-		
-		Bag groups;
-		int i = 1;//starting search radius
-		groups = state.sparseSpace.getMooreNeighbors(x, y, i, mode, false);
-		Group g = null;
-		while(groups.numObjs == 0 || g == null)
-		{
-			i++;
-			groups = state.sparseSpace.getMooreNeighbors(x, y, i, mode,false);
-			if(groups.numObjs > 0)
-			{
-				groups.shuffle(state.random);
-				for(int j = 0; j < groups.numObjs; j++)
-				{
-					Group o = (Group)groups.objs[j];
-					if(o.members.numObjs > 0)
-					{
-						g = o;
-						break;
-					}
-				}
-			}
-		}
-		
-		return g;
-	}
-
-	
-	//Members of a group disperse to other groups within the agent dispersal radius if group is too small
-	public void groupDisperse(Environment state)
-	{
-		Bag members = group.members;
-		if(members.numObjs < state.minGroupSize)
-		{
-			Group g = findGroupNearest(state,group.x, group.y, state.sparseSpace.TOROIDAL);
-			if(g == null) return; 
-			for(int i = 0; i < members.numObjs; i++)
-			{
-				Baboon b = (Baboon)members.objs[i];
-				b.x = g.x;
-				b.y = g.y;
-				b.setGroup(g);
-				g.members.add(b);
-			}
-			members.clear();
-		}
-		
-	}
-	
-	
 	// --- Reproduction Methods for Female Baboons ---
 
 	
@@ -327,7 +272,7 @@ public class Baboon implements Steppable
 	public void maleImmigration()
 	{
 		//Use findGroupNearest method to find a new group
-		Group newGroup = findGroupNearest(state, x, y, state.sparseSpace.TOROIDAL);
+		Group newGroup = state.findGroupNearest(x, y, state.sparseSpace.TOROIDAL);
 		
 		//If a new group is found, proceed with migration
 		if(newGroup != null)
