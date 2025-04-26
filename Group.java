@@ -8,6 +8,7 @@ import sweep.GUIStateSweep;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Group implements Steppable
 {
@@ -16,8 +17,8 @@ public class Group implements Steppable
 	Bag members = null; //bag of baboons who are members
 	public Stoppable event; //so the group can be removed from the schedule
 	Environment state;
-	Bag fertileFemales = new Bag();
-	Bag consortMales = new Bag();
+	ArrayList<Baboon> fertileFemales = new ArrayList<>();
+	ArrayList <Baboon> consortMales = new ArrayList<>();
 	Bag coalitionMales = new Bag();
 	
 
@@ -143,21 +144,114 @@ public class Group implements Steppable
 
 	public void coalitionGame()
 	{
-		//logic for the game goes here
-		/*
-		 * 
-		 * first - high ranking males pair with receptive females
-		 * 
-		 * second - non consort males try to form coalitions
-		 * 
-		 * third - coalitions challenge consort males, successful coalitions pick new consort
-		 * 			**sneaker makes may attempt to steal reproductive female
-		 * 
-		 * 
-		 * 
-		 */
+		//Clear previous lists
+		fertileFemales.clear(); 
+		consortMales.clear();
+		
+		//Identify fertile females in the group
+		ArrayList<Baboon> sortedFemales = new ArrayList<>(); //create an empty ArrayList to store fertile females in 
+		for(Object obj : members) //for each baboon in the group's members bag
+		{
+			Baboon b = (Baboon) obj; //cast each object in the bag as type baboon and assign it as a baboon object "b"
+			if(!b.isMale() && b.cycleDay >= 27 && b.cycleDay <= 33) //If the Baboon object from the members bag has a state value of "male" = false, and is between cycle days 27 and 33, add to fertile array
+			{
+				sortedFemales.add(b);
+			}
+		}
+		
+		//Next, we sort fertile females by closeness to peak fertility (day 30 optimal)
+		//Use a comparator to compare the absolute difference between each pair of females in the sortedFemales ArrayList
+		sortedFemales.sort(new Comparator<Baboon>() 
+		{
+			@Override
+			public int compare(Baboon female1, Baboon female2)
+			{
+				int diff1 = Math.abs(female1.cycleDay - 30);
+				int diff2 = Math.abs(female2.cycleDay - 30);
+				return Integer.compare(diff1, diff2);
+			}
+				
+		});
+		
+		fertileFemales.addAll(sortedFemales); //Add all sorted females to the fertileFemales bag
+		
+		//Identify male baboons in group
+		ArrayList<Baboon> sortedMales = new ArrayList<>();
+		for(Object obj : members)
+		{
+			Baboon b = (Baboon) obj;
+			if(b.isMale())
+			{
+				sortedMales.add(b);
+			}
+		}
+		
+		//Sort males by dominance rank in asceending order
+		sortedMales.sort(new Comparator<Baboon>()
+		{
+			@Override
+			public int compare(Baboon m1, Baboon m2)
+			{
+				return Integer.compare(m1.dominanceRank, m2.dominanceRank);
+			}
+		});
+		
+		//Now we can assign initial consortships
+		int maleIndex = 0;
+		for(Baboon female : fertileFemales) //for each female in the fertileFemales ArrayList
+		{
+			if(maleIndex >= sortedMales.size()) //case where no more males are available to pair with 
+			{
+				break;
+			}
+			
+			Baboon consortMale = sortedMales.get(maleIndex);
+			maleIndex++;
+			
+			consortMales.add(consortMale); //Add to consort males list
+			
+			female.recordMating(consortMale); //record the mating event for this consortship
+			
+		}
+		
+		//Identify males eligible to form a coalition
+		ArrayList<Baboon> coalitionaryMales = new ArrayList<>();
+		
+		for(Baboon male : sortedMales) //for each male in the sorted list of males by rank
+		{
+			if(male.hasCoalitionGene && !consortMales.contains(male)) //if the male has a the coalition gene and 
+			{
+				coalitionaryMales.add(male);
+			}
+		}
+		
+		//randomly pair males in coalitionaryMales into coalitions (add more detail in later model iteration for strategic pairing)
+		 ArrayList<ArrayList<Baboon>> coalitions = formCoalitions(coalitionaryMales);
+		
+		
 	}
 	
+	// Utility method to form coalitions(randomly)
+	public ArrayList<ArrayList<Baboon>> formCoalitions(ArrayList<Baboon> eligibleMales) 
+	{
+	    ArrayList<ArrayList<Baboon>> coalitions = new ArrayList<>();
+
+	    // Shuffle to make random pairs
+	    Collections.shuffle(eligibleMales, new Random(state.random.nextLong()));
+
+	    // Pair them
+	    for (int i = 0; i < eligibleMales.size() - 1; i += 2) 
+	    {
+	        ArrayList<Baboon> pair = new ArrayList<>();
+	        pair.add(eligibleMales.get(i));
+	        pair.add(eligibleMales.get(i + 1));
+	        coalitions.add(pair);
+	    }
+
+	    return coalitions;
+	}
+	
+	//group dispersion utility method
 	public void groupDisperse(Environment state) 
 	{
 	    if (members.numObjs < state.minGroupSize) 
@@ -181,6 +275,7 @@ public class Group implements Steppable
 	    }
 	}
 	
+	//remove group from simulation
 	public boolean die(Environment state)
 	{
 		if(members == null || members.numObjs == 0)
