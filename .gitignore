@@ -1,1 +1,19 @@
 /bin/
+
+# macOS system files
+.DS_Store
+
+# Eclipse-specific
+.settings/
+.classpath
+.project
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# Java compiled class files
+*.class
+
+# Logs
+*.log
