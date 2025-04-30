@@ -25,6 +25,7 @@ public class Baboon implements Steppable
 	int cycleDay = 1; //tracks current day of 33-day reproductive cycle
 	int gestationRemaining = 0; //counts down the gestation period (300 days) if pregnant
 	HashMap<Baboon, Integer> matingHistory; //Records mating events during the fertile period
+	public Baboon currentConsortMale = null; //sets the current consort male to a fertile female 
 	
 	//Variables for males
 	double fightingAbility; //double between 1.0 and 0.0, drops as males age
@@ -131,18 +132,13 @@ public class Baboon implements Steppable
 		//if agent is not male and not pregnant, update the cycle day
 		cycleDay++;
 		
-		//If in the fertile period (days 27-33), mating events are recorded in the matingHistory data structure to use for paternity calculations
-		if (cycleDay >= 27 && cycleDay <= 33)
-		{
-			//need to add code here for updating the paternityCalculation hashMap based on coalition game outcomes
-			//logic to be implemented in recordMating() and called here
-		}
-		
+		//when cycle day exceeds 33, run reproduction method
 		if(cycleDay > 33)
 		{
 			reproduce();
 			cycleDay = 1; //Reset the cycle regardless of outcome
 			matingHistory.clear();
+			currentConsortMale = null; //Clear consortship after fertile period ends
 			
 		}
 		
@@ -252,17 +248,15 @@ public class Baboon implements Steppable
 	
 	public void recordMating(Baboon male)
 	{
-		/*
-		 * A method should be made to record which males mated with a given female, however this introduces an issue.
-		 * 
-		 * Males do not have unique identifiers which makes tracking paternity a challenge.
-		 * 
-		 * One option is to just track male strategy genotype (coalition gene or no)
-		 * 
-		 * Another is to track the strategy which was used to obtain consortship (high rank, coalition)
-		 * 
-		 * A third is to create a unique ID system for each male to track paternities
-		 */
+		Integer count = matingHistory.get(male); //look up male's value in the hashmap
+		if(count == null) //if he doesn't exist in the hashmap
+		{
+			matingHistory.put(male, 1); //add him to it and put his value at 1
+		}
+		else //if he already exists in the hashmap
+		{
+			matingHistory.put(male, count + 1); //update his value in the hashmap so it increases by 1
+		}
 	}
 	
 	
