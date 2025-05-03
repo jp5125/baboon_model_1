@@ -63,7 +63,7 @@ public class Group implements Steppable
 			Baboon male = (Baboon)males.objs[i]; //***note for next week lab, is it redundant to recast this as a baboon as males should already contain objects of class baboon?***
 			
 			// Function to determine each males fighting ability based on age
-			male.fightingAbility = calculateFightingAbility(male.age);
+			male.fightingAbility = male.calculateFightingAbility();
 			
 		}
 		
@@ -102,7 +102,7 @@ public class Group implements Steppable
 		//Next, calculate fighting ability based on age for each male
 		for(Baboon male : males)
 		{
-			male.fightingAbility = calculateFightingAbility(male.age);
+			male.fightingAbility = male.calculateFightingAbility();
 		}
 		
 		//Third, sort males by fighting ability, creating a dominance hierarchy
@@ -121,26 +121,6 @@ public class Group implements Steppable
 			male.dominanceRank = rank + 1; //rank 1 should be highest dominance rank
 		}
 	}
-	
-	// Age-fighting ability function based on Noe 1994
-	public double calculateFightingAbility(int age) 
-	{
-	    /*
-	    - Upon migrating, quickly rise in rank (to top or top 2 spots)
-	    - fighting ability starts very high, drops over time as male ages
-	    - As new young males join the group, males drop in dominance ranking
-	    */
-	    
-		
-		//placeholder function for fighting ability calculation, need to figure out implementation of this to be more biologically accurate
-	    
-	    double maxAbility = 1.0;    // Maximum fighting ability at age 0 (first migration)
-	    double declineStartAge = 0; //After migrating, fighting ability starts declining 
-	    double declineRate = 0.05;   // How quickly fighting ability declines after peak (5% per year currently, change to reflect model system)
-	    
-	    double ability = maxAbility - (declineRate * age); //FA calculation, ***need to more clearly define age in the model***
-	    return Math.max(ability, 0.0); //prevents fighting ability from becoming negative
-	}	
 
 	public void coalitionGame()
 	{

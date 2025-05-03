@@ -3,8 +3,9 @@ import sim.engine.SimState;
 import spaces.Spaces;
 import sweep.SimStateSweep;
 import sim.util.Bag;
+import sim.engine.*;
 
-public class Environment extends SimStateSweep
+public class Environment extends SimStateSweep implements Steppable
 {
 	//population variables
 	public int n =10000; //number of baboons at simulation start
@@ -64,26 +65,50 @@ public class Environment extends SimStateSweep
 	// ** Groups should have rougly similar OSRs (2 females for every male on average) **
 	public void makeGroups()
 	{
-		int m = n/groups; //number of agents in each group at genesis
+		//allow for variable group sizes upon initialization
+		int totalAgentsAssigned = 0;
+		
 		for(int i = 0; i < groups; i++) //for each group
 		{
 			int x = random.nextInt(gridWidth); //give group random x coordinate
 			int y = random.nextInt(gridHeight); //give group random y coordinate
-			Bag g = new Bag(m); //create bag called g which an initial capacity equal to m
+			int groupSize = random.nextInt(maxGroupSize - minGroupSize + 1) + minGroupSize; //generates groups between minimum and maximum group size
 			
-			for(int j = 0; j < m; j++) //add agents to groups
+			if(totalAgentsAssigned + groupSize > n || i == groups - 1) //if there are not enough agents to assign to the group, or there are n-1 groups already
 			{
-				Baboon b;
-				int age =random.nextInt(); //need to set this so it is in baboons life span
-				b = new Baboon(this, true, age, x, y);
-				b.event = schedule.scheduleRepeating(1,0,b);
+				groupSize = n - totalAgentsAssigned; //assign leftover agents to the last group
+			}
+			
+			Bag g = new Bag(groupSize); //create bag called g with capacity equal to groupSize
+			
+			for(int j = 0; j < groupSize; j++) //add agents to groups
+			{
+				boolean isMale = (random.nextDouble() >= 0.714); //2.5:1 OSR
+				int ageInYears = random.nextInt(16) + 10; //ages 10-25 in years
+				int ageInDays = ageInYears * 365; //translate age in years upon initialization to age in days (timesteps)
+				Baboon b = new Baboon(this, isMale, x, y, ageInDays); //create a new baboon for each baboon in the group
+				
 				g.add(b);
 			}
 			
+			totalAgentsAssigned += groupSize; //add the number of agents in the newly formed group to our count of totalAgentsAssigned
+			
 			Group group = new Group(this, x,y,g);
 			group.event = schedule.scheduleRepeating(1.0, 1, group, scheduleTimeInterval);
-			sparseSpace.setObjectLocation(group,  x, y);
+			sparseSpace.setObjectLocation(group, x, y);
+			
+			for(int k = 0; k < g.numObjs; k++) //Assigns group reference to each baboon
+			{
+				Baboon b = (Baboon) g.objs[k];
+				b.setGroup(group);
+				b.event = schedule.scheduleRepeating(1,0,b);
+			}
+			
+			System.out.printf("Group %d initialized at (%d, %d) with %d members.\n", i + 1, x, y, groupSize); //log each groups starting size at startup
+			
+			if(totalAgentsAssigned >= n) break; //if all agents are assigned to groups, exit loop
 		}
+		
 	}
 	
 	//utility method for finding nearest group in simulation. Used by Group.groupDisperse() and Baboon.maleImmigration()
@@ -119,6 +144,52 @@ public class Environment extends SimStateSweep
 		return nearestGroup;
 	}
 	
+	//utility method for printing model outputs to the console for the purpose of debugging BEFORE data collection
+	public void printDebugSummary()
+	{
+		int totalBaboons = 0;
+		int maleCount = 0;
+		int femaleCount = 0;
+		int coalitionGeneCount = 0;
+		double totalFightingAbility = 0.0;
+		
+		for(Object obj : sparseSpace.getAllObjects())
+		{
+			if(obj instanceof Group group)
+			{
+				for(int i = 0; i < group.members.numObjs; i++)
+				{
+					Baboon b = (Baboon) group.members.objs[i];
+					totalBaboons++;
+					
+					if(b.isMale())
+					{
+						maleCount++;
+						totalFightingAbility += b.fightingAbility;
+						
+						if(b.hasCoalitionGene)
+						{
+							coalitionGeneCount++;
+						}
+					} 
+					else
+					{
+						femaleCount++;
+						
+					}
+				}
+			}
+		}
+		double avgFightingAbility = maleCount > 0 ? totalFightingAbility / maleCount : 0.0;
+		double coalitionGeneFreq = maleCount > 0 ? (double) coalitionGeneCount / maleCount : 0.0;
+		
+		System.out.printf(
+				"[Step %d] Total: %d | Males: %d | Females: %d | Coalition Gene: %d (%.2f%%) | Avg FA: %.3f\n",
+		        schedule.getSteps(), totalBaboons, maleCount, femaleCount,
+		        coalitionGeneCount, coalitionGeneFreq * 100, avgFightingAbility
+		    );	
+	}
+	
 	public void start()
 	{
 		super.start();
@@ -126,6 +197,18 @@ public class Environment extends SimStateSweep
 		make2DSpace(spaces, gridWidth, gridHeight);//make the space
 		makeGroups(); //create the groups
 		
+		schedule.scheduleRepeating(this);
+		
+	}
+	
+	
+	public void step(SimState state)
+	{
+		
+		if(schedule.getSteps() % 100 == 0)
+		{
+			printDebugSummary();
+		}
 	}
 
 }

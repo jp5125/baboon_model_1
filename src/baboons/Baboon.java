@@ -9,10 +9,10 @@ import ec.util.MersenneTwisterFast;
 public class Baboon implements Steppable
 {
 	
-	int age; //current age of the agent
+	int age; //current age of the agent in days
+	int maxAge; //Lifespan in days
 	boolean male; //sex of agent
 	public Group group; //the group that the agent is currently a member of
-	int maxAge; //maximum agent age
 	int x; //x-axis location of agent
 	int y; //y-axis location of agent
 	
@@ -20,6 +20,7 @@ public class Baboon implements Steppable
 	//variables used for calculations
 	Environment state;
 	public Stoppable event;
+	
 	
 	//Reproduction instance variables(for females only)
 	int cycleDay = 1; //tracks current day of 33-day reproductive cycle
@@ -34,15 +35,19 @@ public class Baboon implements Steppable
 	boolean fatherHasCoalitionGene; //whether or not a newborn male's father had the coalition gene
 	
 	
-	public Baboon(Environment state, boolean male, int age, int x, int y)
+	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays)
 	{
 		this.state = state;
 		this.male = male;
-		this.age = age;
+		this.age = initialAgeDays;
 		this.x = x;
 		this.y = y;
 		this.hasCoalitionGene = false;
 		this.fatherHasCoalitionGene = false;
+		
+		//Draw agents max age from a normal distribution (mean = 9125 days (25 years), SD = 1825 days (+- 5 years))
+		double lifespan = state.random.nextGaussian() * 1825.0 + 9125.0;
+		this.maxAge = Math.max(1, (int)Math.round(lifespan));
 		
 		if(!male)
 		{
@@ -72,7 +77,15 @@ public class Baboon implements Steppable
 	public void die(Environment state)
 	{
 		event.stop();
+		
+		if(group != null && group.members != null)
+		{
 		group.members.remove(this);
+		}
+		else
+		{
+			System.err.println("WARNING: Baboon died without being assigned to a group."); //added this due to null pointer exception on 5/2/25 debugging
+		}
 	}
 			
 	
@@ -211,7 +224,7 @@ public class Baboon implements Steppable
 		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
-		Baboon newborn = new Baboon(state, newbornIsMale, 0, group.x, group.y); //*** age needs to be fixed to represent that agents are born as adults ***
+		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, 3650); // Newborns are born fully mature (10 years = 3650 days)
 		
 		if(newbornIsMale) //decide if male will have coalition gene or not
 		{
@@ -235,6 +248,7 @@ public class Baboon implements Steppable
 		{
 			//if the newborn is female
 			newborn.hasCoalitionGene = false; //newborn does not have the coalition gene
+			newborn.setGroup(this.group); //assign group to female offspring
 			//for newborn females, add them to the current group
 			group.members.add(newborn);
 		}
@@ -286,6 +300,26 @@ public class Baboon implements Steppable
 		}
 	}
 	
+	public double calculateFightingAbility()
+	{
+		/*
+	    - Upon migrating, quickly rise in rank (to top or top 2 spots)
+	    - fighting ability starts very high, drops over time as male ages
+	    - As new young males join the group, males drop in dominance ranking
+	    */
+		
+		//Fighting ability is peak around 10 years old (3650 time steps), then declines by maxAge
+		double maxAbility = 1.0;
+		int peakAge = 3650; //10 years in days (timesteps)
+		double declineRatePerDay = 0.05 / 365.0; //5% decline rate per year
+		
+		//All agents are born mature, so we can just apply the decline rate from peak age
+		int daysSinceMaturity = age - peakAge;
+		double ability = maxAbility - (daysSinceMaturity * declineRatePerDay);
+		
+		return Math.max(ability, 0.0); //fighting ability should have limits between 0-1, return whichever value is larger
+	}
+	
 	//male strategy genotype
 	public void maleStrategy()
 	{
@@ -313,6 +347,8 @@ public class Baboon implements Steppable
 	@Override
 	public void step(SimState state)
 	{
+		age++; //increase age by 1 timestep (1 day)
+		
 		if(age >= maxAge)
 		{
 			die(this.state);
@@ -326,7 +362,7 @@ public class Baboon implements Steppable
 		}
 		
 		
-		age++;
+		
 		
 	}
 
