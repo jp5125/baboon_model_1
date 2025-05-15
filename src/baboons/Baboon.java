@@ -15,6 +15,7 @@ public class Baboon implements Steppable
 	public Group group; //the group that the agent is currently a member of
 	int x; //x-axis location of agent
 	int y; //y-axis location of agent
+	boolean isJuvenile; // flag for determining if an agent cycles or plays coalition game or not
 	
 	
 	//variables used for calculations
@@ -35,13 +36,14 @@ public class Baboon implements Steppable
 	boolean fatherHasCoalitionGene; //whether or not a newborn male's father had the coalition gene
 	
 	
-	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays)
+	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays, boolean isJuvenile)
 	{
 		this.state = state;
 		this.male = male;
 		this.age = initialAgeDays;
 		this.x = x;
 		this.y = y;
+		this.isJuvenile = isJuvenile;
 		this.hasCoalitionGene = false;
 		this.fatherHasCoalitionGene = false;
 		
@@ -49,6 +51,7 @@ public class Baboon implements Steppable
 		double lifespan = state.random.nextGaussian() * 1825.0 + 9125.0;
 		this.maxAge = Math.max(1, (int)Math.round(lifespan));
 		
+		//initialize female-specific attributes
 		if(!male)
 		{
 			cycleDay = state.random.nextInt(33) + 1; //females are initialized at a random starting point in their cycle
@@ -56,7 +59,18 @@ public class Baboon implements Steppable
 			matingHistory = new HashMap<>(); //Initialize an empty mating history
 		}
 		
-		initializeGenotype(0.05, state.random);
+		//initialize male genotype for coalition frequency
+		if(male)
+		{
+			if(isJuvenile) //for juvenile males at simulation genesis
+			{
+				this.hasCoalitionGene = state.random.nextDouble() < 0.05; //initialize them as having the coalition genotype with a 5% chance
+			}
+			else //for adult males at genesis
+			{
+				initializeGenotype(0.05, state.random); //initialize them with the coalition gene 5% of the time
+			}
+		}
 		
 	}
 	
@@ -126,7 +140,7 @@ public class Baboon implements Steppable
 	public void cycleUpdate()
 	{
 		// Ensures method only applies to females
-		if(male) return;
+		if(male || isJuvenile) return;
 		
 		// If currently pregnant, decrement gestation
 		if(gestationRemaining > 0)
@@ -203,8 +217,8 @@ public class Baboon implements Steppable
 				}
 			}
 			
-			//Begin the gestation period
-			gestationRemaining = 300;
+			//Begin the gestation period (this encapsulates 165 days of gestation + 185 days of nursing)
+			gestationRemaining = 350;
 			
 			this.fatherHasCoalitionGene = father.hasCoalitionGene; //true if the father had the coalition gene, false if not
 			
@@ -224,7 +238,11 @@ public class Baboon implements Steppable
 		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
-		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, 3650); // Newborns are born fully mature (10 years = 3650 days)
+		//Initialize newborn as a juvenile with age = 185 days (185 of the 350 days mother is not cycling in gestationRemaining are due to nursing post birth)
+		int initialAgeDays = 185;
+		boolean isJuvenile = true;
+		
+		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, initialAgeDays, isJuvenile); // Newborns are created and added to simulation at weaning (185 days post birth)
 		
 		if(newbornIsMale) //decide if male will have coalition gene or not
 		{
@@ -240,9 +258,6 @@ public class Baboon implements Steppable
 			//first, set newborn to its mothers group temporarily (because I removed it from its current group in maleImmigration method already)
 			newborn.setGroup(this.group);
 			this.group.members.add(newborn);
-			//For newborn males, trigger migration event
-			newborn.maleImmigration();
-			
 		}
 		else
 		{
@@ -273,10 +288,32 @@ public class Baboon implements Steppable
 		}
 	}
 	
+	//Method for Juvenile to mature
+	public void mature()
+	{
+		//Check and make sure agent is a juvenile before continuing
+		if(!isJuvenile) return;
+		
+		//Change juvenile tag to false to indicate agent is mature
+		isJuvenile = false;
+		
+		//if agent is male, handle fighting ability update and migration event
+		if(male)
+		{
+			maleImmigration();
+		}
+		else //for female agents, initialize their estrous cycle
+		{
+			this.cycleDay = state.random.nextInt(33) + 1;
+			this.gestationRemaining = 0;
+			this.matingHistory = new HashMap<>();
+		}
+	}
+	
 	
 	/// --- Methods for Males ---
 	
-	//dispersal method for newborn males
+	//dispersal method for adult males
 	public void maleImmigration()
 	{
 		//Use findGroupNearest method to find a new group
@@ -349,6 +386,11 @@ public class Baboon implements Steppable
 	{
 		age++; //increase age by 1 timestep (1 day)
 		
+		if(isJuvenile && age >= 3650)
+		{
+			mature();
+		}
+		
 		if(age >= maxAge)
 		{
 			die(this.state);
@@ -356,12 +398,10 @@ public class Baboon implements Steppable
 		}
 		
 		//update female reproduction
-		if(!male)
+		if(!male || !isJuvenile)
 		{
 			cycleUpdate();
 		}
-		
-		
 		
 		
 	}

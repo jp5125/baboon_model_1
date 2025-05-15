@@ -133,7 +133,7 @@ public class Group implements Steppable
 		for(Object obj : members) //for each baboon in the group's members bag
 		{
 			Baboon b = (Baboon) obj; //cast each object in the bag as type baboon and assign it as a baboon object "b"
-			if(!b.isMale() && b.cycleDay >= 27 && b.cycleDay <= 33) //If the Baboon object from the members bag has a state value of "male" = false, and is between cycle days 27 and 33, add to fertile array
+			if(!b.isMale() && !b.isJuvenile && b.cycleDay >= 27 && b.cycleDay <= 33) //If the Baboon object from the members bag has a state value of "male" = false, isJuvenile = false, and is between cycle days 27 and 33, add to fertile array
 			{
 				sortedFemales.add(b);
 			}
@@ -199,7 +199,7 @@ public class Group implements Steppable
 		
 		for(Baboon male : sortedMales) //for each male in the sorted list of males by rank
 		{
-			if(male.hasCoalitionGene && !consortMales.contains(male)) //if the male has a the coalition gene and 
+			if(male.hasCoalitionGene && !consortMales.contains(male)) //if the male has a the coalition gene and is not a consort
 			{
 				coalitionaryMales.add(male);
 			}
@@ -260,11 +260,11 @@ public class Group implements Steppable
 			if(currentConsort == null) //handles cases where female has no consort but coalitions have already paired
 			{
 				Baboon newConsort; 
-				if(state.random.nextBoolean())
+				if(state.random.nextBoolean()) //if this returns true, male1 becomes the new consort
 				{
 					newConsort = male1;
 				}
-				else
+				else //otherwise, male2 becomes the new consort, should be 50-50 prob.
 				{
 					newConsort = male2;
 				}

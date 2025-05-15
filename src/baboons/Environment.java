@@ -67,6 +67,8 @@ public class Environment extends SimStateSweep implements Steppable
 	{
 		//allow for variable group sizes upon initialization
 		int totalAgentsAssigned = 0;
+		int maxJuveniles = (int) (n * 0.2); //ensure that no group start with more than 20% of their group members as juveniles
+		int totalJuvenilesAssigned = 0;
 		
 		for(int i = 0; i < groups; i++) //for each group
 		{
@@ -84,10 +86,23 @@ public class Environment extends SimStateSweep implements Steppable
 			for(int j = 0; j < groupSize; j++) //add agents to groups
 			{
 				boolean isMale = (random.nextDouble() >= 0.714); //2.5:1 OSR
-				int ageInYears = random.nextInt(16) + 10; //ages 10-25 in years
-				int ageInDays = ageInYears * 365; //translate age in years upon initialization to age in days (timesteps)
-				Baboon b = new Baboon(this, isMale, x, y, ageInDays); //create a new baboon for each baboon in the group
+				int ageInDays;
+				boolean isJuvenile = false;
 				
+				//decide if agent is going to be a juvenile or not based on if there are too many juveniles and a probability calculation
+				if(totalJuvenilesAssigned < maxJuveniles && random.nextDouble() < 0.2)
+				{
+					isJuvenile = true; //set the agent's juvenile tag to true
+					ageInDays = random.nextInt(3650 - 185) + 185; //initialize at an age between weaning (185 days after birth) and sexual maturity (10 y/o)
+					totalJuvenilesAssigned++; //increase number of juveniles assigned
+				}
+				else //if the agent will be initialized as an adult
+				{
+					int ageInYears = random.nextInt(16) + 10; //ages 10-25 in years
+					ageInDays = ageInYears * 365; //translate age in years upon initialization to age in days (timesteps)
+				}
+				
+				Baboon b = new Baboon(this, isMale, x, y, ageInDays, isJuvenile); //create a new baboon for each baboon in the group
 				g.add(b);
 			}
 			
@@ -148,8 +163,9 @@ public class Environment extends SimStateSweep implements Steppable
 	public void printDebugSummary()
 	{
 		int totalBaboons = 0;
-		int maleCount = 0;
-		int femaleCount = 0;
+		int juvenileCount = 0;
+		int adultMaleCount = 0;
+		int adultFemaleCount = 0;
 		int coalitionGeneCount = 0;
 		double totalFightingAbility = 0.0;
 		
@@ -162,9 +178,14 @@ public class Environment extends SimStateSweep implements Steppable
 					Baboon b = (Baboon) group.members.objs[i];
 					totalBaboons++;
 					
-					if(b.isMale())
+					if(b.isJuvenile)
 					{
-						maleCount++;
+						juvenileCount++;
+					}
+					
+					if(b.isMale() && !b.isJuvenile)
+					{
+						adultMaleCount++;
 						totalFightingAbility += b.fightingAbility;
 						
 						if(b.hasCoalitionGene)
@@ -172,20 +193,22 @@ public class Environment extends SimStateSweep implements Steppable
 							coalitionGeneCount++;
 						}
 					} 
-					else
+					if(!b.isMale() && !b.isJuvenile)
 					{
-						femaleCount++;
+						adultFemaleCount++;
 						
 					}
 				}
 			}
 		}
-		double avgFightingAbility = maleCount > 0 ? totalFightingAbility / maleCount : 0.0;
-		double coalitionGeneFreq = maleCount > 0 ? (double) coalitionGeneCount / maleCount : 0.0;
+		
+		int totalAdults = adultMaleCount + adultFemaleCount;
+		double avgFightingAbility = adultMaleCount > 0 ? totalFightingAbility / adultMaleCount : 0.0;
+		double coalitionGeneFreq = adultMaleCount > 0 ? (double) coalitionGeneCount / adultMaleCount : 0.0;
 		
 		System.out.printf(
-				"[Step %d] Total: %d | Males: %d | Females: %d | Coalition Gene: %d (%.2f%%) | Avg FA: %.3f\n",
-		        schedule.getSteps(), totalBaboons, maleCount, femaleCount,
+				"[Step %d] Total: %d | Adults: %d | Juveniles: %d | Males: %d | Females: %d | Coalition Gene: %d (%.2f%%) | Avg FA: %.3f\n",
+		        schedule.getSteps(), totalBaboons, totalAdults, juvenileCount, adultMaleCount, adultFemaleCount,
 		        coalitionGeneCount, coalitionGeneFreq * 100, avgFightingAbility
 		    );	
 	}
