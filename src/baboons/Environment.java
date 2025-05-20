@@ -10,8 +10,10 @@ public class Environment extends SimStateSweep implements Steppable
 	//population variables
 	public int n =10000; //number of baboons at simulation start
 	public int groups = 100; //number of groups at simulation start
+	public int minGroups = 20;
 	public int minGroupSize = 12;
-	public int maxGroupSize = 120; //***adjust group sizes to capture that only adults are in population, no juveniles. thus total group size is smaller than in wild***
+	public int maxGroupSize = 125; //***adjust group sizes to capture that only adults are in population, no juveniles. thus total group size is smaller than in wild***
+	public int maxPopulation = 25000; 
 	
 	//reproduction variables
 	public double mutationRate = 0.01; //rate of mutations in cooperative genotype
@@ -52,17 +54,24 @@ public class Environment extends SimStateSweep implements Steppable
 	public void setGroups(int groups) {
 		this.groups = groups;
 	}
-
-	//methods for environment
 	
+	public int getMaxPopulation(){
+		return maxPopulation;
+	}
+	
+	public void setMaxPopulation(int maxPopulation) {
+		this.maxPopulation = maxPopulation;
+	}
+	
+	//methods for environment
 	public Environment(long seed, Class observer)
 	{
 		super(seed, observer);
+		
 	}
 	
 	
-	// ** This method needs to be reworked so groups start with different numbers of agents **
-	// ** Groups should have rougly similar OSRs (2 females for every male on average) **
+	// Method to make groups upon simulation initialization
 	public void makeGroups()
 	{
 		//allow for variable group sizes upon initialization
@@ -159,6 +168,26 @@ public class Environment extends SimStateSweep implements Steppable
 		return nearestGroup;
 	}
 	
+	//Utility method to get the current number of groups
+	public int getTotalGroups()
+	{
+		//returns 0 if getTotalGroups runs before initialization
+		if(sparseSpace == null)
+		{
+			return 0;
+		}
+		
+		int groupCount = 0;
+		for(Object obj : sparseSpace.getAllObjects())
+		{
+			if(obj instanceof Group)
+			{
+				groupCount++;
+			}
+		}
+		return groupCount;
+	}
+	
 	//utility method for printing model outputs to the console for the purpose of debugging BEFORE data collection
 	public void printDebugSummary()
 	{
@@ -211,7 +240,12 @@ public class Environment extends SimStateSweep implements Steppable
 		        schedule.getSteps(), totalBaboons, totalAdults, juvenileCount, adultMaleCount, adultFemaleCount,
 		        coalitionGeneCount, coalitionGeneFreq * 100, avgFightingAbility
 		    );	
+		
+		//used in test infant survival method
+		//System.out.println(Baboon.getInfantSurvivalStats());
+		//Baboon.resetInfantCounters();
 	}
+	
 	
 	public void start()
 	{

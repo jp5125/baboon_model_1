@@ -28,6 +28,8 @@ public class Baboon implements Steppable
 	int gestationRemaining = 0; //counts down the gestation period (300 days) if pregnant
 	HashMap<Baboon, Integer> matingHistory; //Records mating events during the fertile period
 	public Baboon currentConsortMale = null; //sets the current consort male to a fertile female 
+	private static int infantDied = 0;
+	private static int infantSurvived = 0;
 	
 	//Variables for males
 	double fightingAbility; //double between 1.0 and 0.0, drops as males age
@@ -64,11 +66,11 @@ public class Baboon implements Steppable
 		{
 			if(isJuvenile) //for juvenile males at simulation genesis
 			{
-				this.hasCoalitionGene = state.random.nextDouble() < 0.05; //initialize them as having the coalition genotype with a 5% chance
+				this.hasCoalitionGene = state.random.nextDouble() < 0.01; //initialize them as having the coalition genotype with a 5% chance
 			}
 			else //for adult males at genesis
 			{
-				initializeGenotype(0.05, state.random); //initialize them with the coalition gene 5% of the time
+				initializeGenotype(0.01, state.random); //initialize them with the coalition gene 5% of the time
 			}
 		}
 		
@@ -175,12 +177,27 @@ public class Baboon implements Steppable
 	public void reproduce()
 	{
 		//ensures the method is for females only
-		if(male) return; 
+		if(male || isJuvenile) return; 
 		
 		//If no mating events have been recorded, no pregnancy can occur
 		//extremely unlikely edge case but should be accounted for so it does not break the simulation
 		if(matingHistory == null || matingHistory.isEmpty())
 		{
+			return;
+		}
+		
+		int currentPopulation = 0;
+		for(Object obj : state.sparseSpace.getAllObjects())
+		{
+			if (obj instanceof Group group)
+			{
+				currentPopulation += group.members.numObjs;
+			}
+		}
+		
+		if(currentPopulation >= state.maxPopulation)
+		{
+			//System.out.println("Max population reached. Skipping reproduction");
 			return;
 		}
 		
@@ -217,8 +234,8 @@ public class Baboon implements Steppable
 				}
 			}
 			
-			//Begin the gestation period (this encapsulates 165 days of gestation + 185 days of nursing)
-			gestationRemaining = 350;
+			//Begin the gestation period (this encapsulates 165 days of gestation + 185 days of nursing + 60 days post weaning before mother begins cycling, averages estimated from Smuts and Nicolson, 1989)
+			gestationRemaining = 410;
 			
 			this.fatherHasCoalitionGene = father.hasCoalitionGene; //true if the father had the coalition gene, false if not
 			
@@ -233,13 +250,31 @@ public class Baboon implements Steppable
 	//Handles agent birthing event, creates a new baboon agent
 	public void giveBirth()
 	{
+		
+		//check if population is at maximum capacity
+		int currentPopulation = 0;
+		
+		for(Object obj : state.sparseSpace.getAllObjects())
+		{
+			if(obj instanceof Group group)
+			{
+				currentPopulation += group.members.numObjs;
+			}
+		}
+		
+		if(currentPopulation >= state.maxPopulation)
+		{
+			//System.out.println("Max population reached, Newborn baboon not added to simulation.");
+			return;
+		}
+		
 		//Calculate the probability that a newborn will be female (OSR in baboons is between 2-3 adult females for every male)
 		//To abstract away high male mortality rate in the simulation, we will just use a 2.5:1 sex ratio at birth of females to males
 		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
-		//Initialize newborn as a juvenile with age = 185 days (185 of the 350 days mother is not cycling in gestationRemaining are due to nursing post birth)
-		int initialAgeDays = 185;
+		//Initialize newborn as a juvenile with age = 185 days (185 days of nursing + 60 days weaned but mother has not started cycling again of the 410 days in gestationRemaining)
+		int initialAgeDays = 245;
 		boolean isJuvenile = true;
 		
 		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, initialAgeDays, isJuvenile); // Newborns are created and added to simulation at weaning (185 days post birth)
@@ -309,6 +344,46 @@ public class Baboon implements Steppable
 			this.matingHistory = new HashMap<>();
 		}
 	}
+	
+	
+	///--- Debugging / Test methods ---///
+	//method for infant survival check, culls 25% of juvenile agents at 1 year old to reflect infant mortality rate reported in Alberts(2017)
+	/*public void checkInfantSurvival()
+	{
+		
+		//Ensure this method only applies to juveniles
+		if(!isJuvenile) return;
+		
+		//Check if juvenile has reached 365 days of age
+		if(age == 365)
+		{
+			if(state.random.nextDouble() < 0.25)
+			{
+				infantDied++;
+				group.members.remove(this);
+				event.stop();
+				return;
+			}
+			else
+			{
+				infantSurvived++;
+			}
+		}
+	}*/
+	
+	/*public static void resetInfantCounters()
+	{
+		infantDied = 0;
+		infantSurvived = 0;
+	}*/
+	
+	/*public static String getInfantSurvivalStats()
+	{
+		return  "Number of 1 y/o who died in last 100 time-steps: " + infantDied +
+		           ", Number of 1 y/o who survived in last 100 time-steps: " + infantSurvived;
+	}*/
+	
+	
 	
 	
 	/// --- Methods for Males ---
@@ -385,6 +460,7 @@ public class Baboon implements Steppable
 	public void step(SimState state)
 	{
 		age++; //increase age by 1 timestep (1 day)
+		
 		
 		if(isJuvenile && age >= 3650)
 		{

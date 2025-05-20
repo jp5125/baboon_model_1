@@ -318,10 +318,11 @@ public class Group implements Steppable
 	//group dispersion utility method
 	public void groupDisperse(Environment state) 
 	{
-	    if (members.numObjs < state.minGroupSize) 
+	    if (members.numObjs < state.minGroupSize && state.getTotalGroups() > state.minGroups) 
 	    {
 	        Group newGroup = state.findGroupNearest(this.x, this.y, state.sparseSpace.TOROIDAL);
-	        if (newGroup == null) return;
+	        if (newGroup == null || newGroup.members.numObjs >= state.maxGroupSize) 
+	        	return;
 
 	        for (int i = 0; i < members.numObjs; i++) 
 	        {
