@@ -19,8 +19,17 @@ public class GUI extends GUIStateSweep
 	
 	public static void main(String[] args) 
 	{
+		String[] titles = {"Coalition Gene Frequency",
+				"Coalition Gene Male Percentage"}; //A string array, where every entry is the title of a chart
+		String[] x = {"Time Steps", 
+				"Time Steps"}; // A string array, where every entry is the x-axis title
+		String[] y = {"Number of Males with Coalition Gene", 
+				"Percentage of Males with Coalition Gene"}; //A string array, where every entry is the y-axis title
+		
+		GUI.initializeArrayTimeSeriesChart(2, titles, x, y); //creates as many charts as indicated by the first number
+		
 		// TODO Auto-generated method stub
-		GUI.initialize(Environment.class, null, GUI.class, 400, 400, 
+		GUI.initialize(Environment.class, Experimenter.class, GUI.class, 400, 400, 
 				Color.WHITE, Color.BLUE, true, Spaces.SPARSE);
 
 	}

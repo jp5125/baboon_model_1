@@ -255,6 +255,10 @@ public class Environment extends SimStateSweep implements Steppable
 		makeGroups(); //create the groups
 		
 		schedule.scheduleRepeating(this);
+		if(observer != null)
+		{
+			observer.initialize(sparseSpace, spaces); // initialize the experimenter by calling initialize in the parent class
+		}
 		
 	}
 	

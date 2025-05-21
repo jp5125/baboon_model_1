@@ -432,6 +432,18 @@ public class Baboon implements Steppable
 		return Math.max(ability, 0.0); //fighting ability should have limits between 0-1, return whichever value is larger
 	}
 	
+	//use a logistic curve instead of linear decrease in fighting ability
+	public double calculateFightingAbilityLogistic()
+	{
+		int x = age;
+		double k = 0.0015; //steepness of logistic decay
+		int x0 = 5475; //midpoint
+		
+		double ability = 1.0 / (1.0 + Math.exp(k * (x - x0)));
+		return ability;
+		
+	}
+	
 	//male strategy genotype
 	public void maleStrategy()
 	{
