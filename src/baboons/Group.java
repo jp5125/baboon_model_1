@@ -300,6 +300,9 @@ public class Group implements Steppable
 					targetFemale.recordMating(newConsort); //record the mating event with the coalitionary male
 					
 					//Apply costs to every male involved
+					mortalWoundConsort(currentConsort);
+					mortalWoundCoalition(male1);
+					mortalWoundCoalition(male2);
 					applyFightingCost(currentConsort);
 					applyFightingCost(male1);
 					applyFightingCost(male2);
@@ -313,6 +316,26 @@ public class Group implements Steppable
 	{
 		double cost = 0.01; //1% of fighting ability decreased after a fight
 		male.fightingAbility = Math.max(0, male.fightingAbility - cost); 
+	}
+	
+	public void mortalWoundConsort(Baboon male)
+	{
+		double probMortalWound = 0.00;
+		
+		if(state.random.nextDouble() < probMortalWound)
+		{
+			male.die(state);
+		}
+	}
+	
+	public void mortalWoundCoalition(Baboon male)
+	{
+		double probMortalWound = 0.003;
+		
+		if(state.random.nextDouble() < probMortalWound)
+		{
+			male.die(state);
+		}
 	}
 	
 	//group dispersion utility method

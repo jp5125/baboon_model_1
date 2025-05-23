@@ -62,17 +62,17 @@ public class Baboon implements Steppable
 		}
 		
 		//initialize male genotype for coalition frequency
-		if(male)
+		/*if(male)
 		{
 			if(isJuvenile) //for juvenile males at simulation genesis
 			{
-				this.hasCoalitionGene = state.random.nextDouble() < 0.01; //initialize them as having the coalition genotype with a 5% chance
+				this.hasCoalitionGene = state.random.nextDouble() < 0.01; //initialize them as having the coalition genotype with a 1% chance
 			}
 			else //for adult males at genesis
 			{
-				initializeGenotype(0.01, state.random); //initialize them with the coalition gene 5% of the time
+				initializeGenotype(0.01, state.random); //initialize them with the coalition gene 1% of the time
 			}
-		}
+		}*/
 		
 	}
 	
