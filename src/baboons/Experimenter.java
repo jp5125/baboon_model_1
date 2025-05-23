@@ -16,7 +16,8 @@ public class Experimenter extends Observer
 		super(fileName, folderName, state, sweeper, precision, headers);
 	}
 	
-	public void numberOfCoalitionMales(Environment state) {
+	public void numberOfCoalitionMales(Environment state) 
+	{
 	    Bag groups = state.sparseSpace.getAllObjects();
 	    int malesWithGene = 0;
 	    int totalMales = 0;
@@ -29,7 +30,7 @@ public class Experimenter extends Observer
 	        for (int i = 0; i < members.numObjs; i++) 
 	        {
 	            Baboon baboon = (Baboon) members.objs[i];
-	            if (baboon.isMale()) 
+	            if (baboon.isMale() && !baboon.isJuvenile) 
 	            {
 	                totalMales++;
 	                if (baboon.hasCoalitionGene) 
