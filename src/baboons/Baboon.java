@@ -103,6 +103,24 @@ public class Baboon implements Steppable
 			System.err.println("WARNING: Baboon died without being assigned to a group."); //added this due to null pointer exception on 5/2/25 debugging
 		}
 	}
+	
+	//Method that implements a moran-like process to cull agents based on density
+	/*public void checkDensityDependentMortality()
+	{
+		int currentPop = state.getTotalPopulation();
+		int threshold = state.getMaxPopulation() * 90 / 100;
+		
+		if(currentPop > threshold)
+		{
+			int excess = currentPop - threshold;
+			double densityMortalityRate = 0.0001 * excess; 
+			
+			if(state.random.nextDouble() < densityMortalityRate)
+			{
+				this.die(state);;
+			}
+		}
+	}*/
 			
 	
 	//getters and setters for age, sex, and group
@@ -203,7 +221,7 @@ public class Baboon implements Steppable
 		
 		//If the agent is female and does have a history of copulations with a male in the previous cycle
 		//Determine baseline probability of becoming pregnant at the end of the cycle
-		double pregnancyProbability = 0.5; // ***adjust this to reflect biological system***
+		double pregnancyProbability = 0.3; // //adjusted on 5/22/2025 from 0.5 to 0.3 in order to control for wild juvenile-adult oscillations from cohort cycling
 		if(state.random.nextDouble() < pregnancyProbability)
 		{
 			//pregnancy occurs
@@ -268,9 +286,9 @@ public class Baboon implements Steppable
 			return;
 		}
 		
-		//Calculate the probability that a newborn will be female (OSR in baboons is between 2-3 adult females for every male)
-		//To abstract away high male mortality rate in the simulation, we will just use a 2.5:1 sex ratio at birth of females to males
-		double femaleProbability = 2.5 / (2.5 + 1.0); // ~0.714
+		//assigning a heavily female skewed birth rate caused unstable population dynamics
+		//Tried 50/50 female to male birth rate, and used male biased dispersal mortality to try and fix adult/juvenile oscillations as well as sex-ratio stability
+		double femaleProbability = 0.50;
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
 		//Initialize newborn as a juvenile with age = 185 days (185 days of nursing + 60 days weaned but mother has not started cycling again of the 410 days in gestationRemaining)
@@ -335,7 +353,15 @@ public class Baboon implements Steppable
 		//if agent is male, handle fighting ability update and migration event
 		if(male)
 		{
+			if(state.random.nextDouble() < (state).migrationMortalityRate) //to control cohort cyclying effects, remove a portion of males when they disperse (captures predation and should stabilize population dynamics)
+			{
+				this.die(state);
+				return;
+			}
+			else
+			{
 			maleImmigration();
+			}
 		}
 		else //for female agents, initialize their estrous cycle
 		{
@@ -474,12 +500,21 @@ public class Baboon implements Steppable
 		age++; //increase age by 1 timestep (1 day)
 		
 		
-		if(isJuvenile && age >= 3650)
+		if(isJuvenile)
 		{
+			if((isMale() && age >= 2555) || (!isMale() && age >= 2190)) //if juvenile is male, matures at 7 y/o, if juvenile is female matures at 6
+			{
 			mature();
+			}
 		}
 		
-		if(age >= maxAge)
+		//moran-like process breaks the population dynamic
+		/*if(state.schedule.getSteps() >= 50 && state.schedule.getSteps() % 50 == 0) //implement density dependent mortality starting at step 50 and every 50 steps afterward
+		{
+			checkDensityDependentMortality();
+		}*/
+		
+		if(age >= maxAge) // when agent ages past their individual lifespan, they die
 		{
 			die(this.state);
 			return;

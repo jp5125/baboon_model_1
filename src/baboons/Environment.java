@@ -17,6 +17,7 @@ public class Environment extends SimStateSweep implements Steppable
 	
 	//reproduction variables
 	public double mutationRate = 0.01; //rate of mutations in cooperative genotype
+	public double migrationMortalityRate = 0.30; //30% chance a male will die when leaving their natal group
 	
 	//age variables
 	public double averageAge; 
@@ -61,6 +62,16 @@ public class Environment extends SimStateSweep implements Steppable
 	
 	public void setMaxPopulation(int maxPopulation) {
 		this.maxPopulation = maxPopulation;
+	}
+	
+	public double getMigrationMortalityRate()
+	{
+		return migrationMortalityRate;
+	}
+	
+	public void setMigrationMortalityRate(double rate)
+	{
+		this.migrationMortalityRate = rate;
 	}
 	
 	//methods for environment
@@ -171,7 +182,7 @@ public class Environment extends SimStateSweep implements Steppable
 	//Utility method to get the current number of groups
 	public int getTotalGroups()
 	{
-		//returns 0 if getTotalGroups runs before initialization
+		//returns 0 when MASON inspects getTotalGroupsbefore initialization,  prevents nullPointerError
 		if(sparseSpace == null)
 		{
 			return 0;
@@ -186,6 +197,26 @@ public class Environment extends SimStateSweep implements Steppable
 			}
 		}
 		return groupCount;
+	}
+	
+	//Utility method for getting the current number of baboons in the simulation
+	public int getTotalPopulation()
+	{
+		//returns 0 when MASON inspects getTotalPopulation before initialization, prevents nullPointerError
+		if(sparseSpace == null)
+		{
+			return 0;
+		}
+		
+		int count = 0;
+		for(Object obj : sparseSpace.getAllObjects())
+		{
+			if(obj instanceof Group g)
+			{
+				count += g.members.numObjs;
+			}
+		}
+		return count;
 	}
 	
 	//utility method for printing model outputs to the console for the purpose of debugging BEFORE data collection
