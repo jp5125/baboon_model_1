@@ -4,6 +4,7 @@ import spaces.Spaces;
 import sweep.SimStateSweep;
 import sim.util.Bag;
 import sim.engine.*;
+import java.util.*;
 
 public class Environment extends SimStateSweep implements Steppable
 {
@@ -21,6 +22,9 @@ public class Environment extends SimStateSweep implements Steppable
 	
 	//age variables
 	public double averageAge; 
+	
+	int malesWithGene = 0;
+	int malesWithoutGene = 0;
 	
 	//getters and setters
 	
@@ -270,13 +274,12 @@ public class Environment extends SimStateSweep implements Steppable
 				"[Step %d] Total: %d | Adults: %d | Juveniles: %d | Males: %d | Females: %d | Coalition Gene: %d (%.2f%%) | Avg FA: %.3f\n",
 		        schedule.getSteps(), totalBaboons, totalAdults, juvenileCount, adultMaleCount, adultFemaleCount,
 		        coalitionGeneCount, coalitionGeneFreq * 100, avgFightingAbility
-		    );	
+		    );
 		
 		//used in test infant survival method
 		//System.out.println(Baboon.getInfantSurvivalStats());
 		//Baboon.resetInfantCounters();
 	}
-	
 	
 	public void start()
 	{
@@ -296,11 +299,12 @@ public class Environment extends SimStateSweep implements Steppable
 	
 	public void step(SimState state)
 	{
-		
+	
 		if(schedule.getSteps() % 100 == 0)
 		{
 			printDebugSummary();
 		}
+		
 	}
 
 }

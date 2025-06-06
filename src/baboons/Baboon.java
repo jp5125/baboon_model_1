@@ -36,6 +36,10 @@ public class Baboon implements Steppable
 	int dominanceRank; //calculated based on comparisons of fighting abilities of other males within a group
 	boolean hasCoalitionGene; //whether or not a male has the coalition gene
 	boolean fatherHasCoalitionGene; //whether or not a newborn male's father had the coalition gene
+	public int offspringCount = 0; //tracks number of offspring a male sires throughout his lifetime
+	public int primeOffspring = 0; //tracks number of offspring sired when male is in prime life-history stage
+	public int postPrimeOffspring = 0; //tracks number of offspring sired when male is post-prime
+	public int senescentOffspring = 0; //tracks number of offspring sired when male is senescent
 	
 	
 	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays, boolean isJuvenile)
@@ -248,6 +252,13 @@ public class Baboon implements Steppable
 				if(randomChoice <= cumulative) //if the value of the random number selected is less than or equal to cumulative at that stage of the for loop
 				{
 					father = male; //that male becomes the father
+					father.offspringCount++; // add to father's offspring count tracker
+					switch(father.getLifeStage())
+					{
+					case PRIME -> father.primeOffspring++;
+					case POST_PRIME -> father.postPrimeOffspring++;
+					case SENESCENT -> father.senescentOffspring++;
+					}
 					break;
 				}
 			}
@@ -256,6 +267,8 @@ public class Baboon implements Steppable
 			gestationRemaining = 410;
 			
 			this.fatherHasCoalitionGene = father.hasCoalitionGene; //true if the father had the coalition gene, false if not
+			
+			//record 
 			
 		}
 		else
@@ -291,7 +304,7 @@ public class Baboon implements Steppable
 		double femaleProbability = 0.50;
 		boolean newbornIsMale = (state.random.nextDouble() >= femaleProbability);
 		
-		//Initialize newborn as a juvenile with age = 185 days (185 days of nursing + 60 days weaned but mother has not started cycling again of the 410 days in gestationRemaining)
+		//Initialize newborn as a juvenile with age = 245 days (185 days of nursing + 60 days weaned but mother has not started cycling again of the 410 days in gestationRemaining)
 		int initialAgeDays = 245;
 		boolean isJuvenile = true;
 		
@@ -410,9 +423,15 @@ public class Baboon implements Steppable
 	}*/
 	
 	
-	
-	
 	/// --- Methods for Males ---
+	
+	public LifeStage getLifeStage()
+	{
+		if(isJuvenile || age < 2555) return LifeStage.JUVENILE; // if age is between 0-2554 days (0-7 years old), male is juvenile
+		if(age < 5475) return LifeStage.PRIME; //if age is between 7-15 years old, consider prime male
+		if(age < 7300) return LifeStage.POST_PRIME; //if age is between 15-20 years old, post-prime male with potential coalition formation ability
+		return LifeStage.SENESCENT; //few agents that live past 20 can form coalitions but will be very weak comparativley
+	}
 	
 	//dispersal method for adult males
 	public void maleImmigration()

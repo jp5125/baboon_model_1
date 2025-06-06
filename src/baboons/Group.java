@@ -102,7 +102,7 @@ public class Group implements Steppable
 		//Next, calculate fighting ability based on age for each male
 		for(Baboon male : males)
 		{
-			male.fightingAbility = male.calculateFightingAbility();
+			male.fightingAbility = male.calculateFightingAbilityLogistic();
 		}
 		
 		//Third, sort males by fighting ability, creating a dominance hierarchy
@@ -199,7 +199,7 @@ public class Group implements Steppable
 		
 		for(Baboon male : sortedMales) //for each male in the sorted list of males by rank
 		{
-			if(male.hasCoalitionGene && !consortMales.contains(male)) //if the male has a the coalition gene and is not a consort
+			if(male.hasCoalitionGene && !consortMales.contains(male) && male.getLifeStage() == LifeStage.POST_PRIME || male.getLifeStage() == LifeStage.SENESCENT) //if the male has a the coalition gene and is not a consort
 			{
 				coalitionaryMales.add(male);
 			}
@@ -330,7 +330,7 @@ public class Group implements Steppable
 	
 	public void mortalWoundCoalition(Baboon male)
 	{
-		double probMortalWound = 0.003;
+		double probMortalWound = 0.05;
 		
 		if(state.random.nextDouble() < probMortalWound)
 		{
