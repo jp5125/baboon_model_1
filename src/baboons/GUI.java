@@ -27,6 +27,8 @@ public class GUI extends GUIStateSweep
 				"Percentage of Males with Coalition Gene"}; //A string array, where every entry is the y-axis title
 		
 		GUI.initializeArrayTimeSeriesChart(2, titles, x, y); //creates as many charts as indicated by the first number
+		GUI.initializeHistogramChart("Male Reproductive Success: Gene x LifeStage", "Category", "Avg Offspring", 6);
+		
 		
 		// TODO Auto-generated method stub
 		GUI.initialize(Environment.class, Experimenter.class, GUI.class, 400, 400, 

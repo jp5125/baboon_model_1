@@ -98,6 +98,12 @@ public class Baboon implements Steppable
 	{
 		event.stop();
 		
+		if(isMale() && !isJuvenile)
+		{
+			state.deadMales.add(this); //track dead adult males for probe
+			state.experimenter.maleOffspringByStrategy(this);
+		}
+		
 		if(group != null && group.members != null)
 		{
 		group.members.remove(this);
@@ -108,24 +114,6 @@ public class Baboon implements Steppable
 		}
 	}
 	
-	//Method that implements a moran-like process to cull agents based on density
-	/*public void checkDensityDependentMortality()
-	{
-		int currentPop = state.getTotalPopulation();
-		int threshold = state.getMaxPopulation() * 90 / 100;
-		
-		if(currentPop > threshold)
-		{
-			int excess = currentPop - threshold;
-			double densityMortalityRate = 0.0001 * excess; 
-			
-			if(state.random.nextDouble() < densityMortalityRate)
-			{
-				this.die(state);;
-			}
-		}
-	}*/
-			
 	
 	//getters and setters for age, sex, and group
 	public int getAge() {
@@ -205,21 +193,6 @@ public class Baboon implements Steppable
 		//extremely unlikely edge case but should be accounted for so it does not break the simulation
 		if(matingHistory == null || matingHistory.isEmpty())
 		{
-			return;
-		}
-		
-		int currentPopulation = 0;
-		for(Object obj : state.sparseSpace.getAllObjects())
-		{
-			if (obj instanceof Group group)
-			{
-				currentPopulation += group.members.numObjs;
-			}
-		}
-		
-		if(currentPopulation >= state.maxPopulation)
-		{
-			//System.out.println("Max population reached. Skipping reproduction");
 			return;
 		}
 		
@@ -432,6 +405,7 @@ public class Baboon implements Steppable
 		if(age < 7300) return LifeStage.POST_PRIME; //if age is between 15-20 years old, post-prime male with potential coalition formation ability
 		return LifeStage.SENESCENT; //few agents that live past 20 can form coalitions but will be very weak comparativley
 	}
+	
 	
 	//dispersal method for adult males
 	public void maleImmigration()

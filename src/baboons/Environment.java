@@ -23,8 +23,11 @@ public class Environment extends SimStateSweep implements Steppable
 	//age variables
 	public double averageAge; 
 	
+	//references for data collection
+	public static Bag deadMales = new Bag();
 	int malesWithGene = 0;
 	int malesWithoutGene = 0;
+	public Experimenter experimenter;
 	
 	//getters and setters
 	
@@ -99,13 +102,13 @@ public class Environment extends SimStateSweep implements Steppable
 			int x = random.nextInt(gridWidth); //give group random x coordinate
 			int y = random.nextInt(gridHeight); //give group random y coordinate
 			int groupSize = random.nextInt(maxGroupSize - minGroupSize + 1) + minGroupSize; //generates groups between minimum and maximum group size
+			Bag g = new Bag(groupSize); //create bag called g with capacity equal to groupSize
 			
 			if(totalAgentsAssigned + groupSize > n || i == groups - 1) //if there are not enough agents to assign to the group, or there are n-1 groups already
 			{
 				groupSize = n - totalAgentsAssigned; //assign leftover agents to the last group
 			}
 			
-			Bag g = new Bag(groupSize); //create bag called g with capacity equal to groupSize
 			
 			for(int j = 0; j < groupSize; j++) //add agents to groups
 			{
@@ -292,6 +295,8 @@ public class Environment extends SimStateSweep implements Steppable
 		if(observer != null)
 		{
 			observer.initialize(sparseSpace, spaces); // initialize the experimenter by calling initialize in the parent class
+			experimenter = (Experimenter) observer;
+			experimenter.resetVariables();
 		}
 		
 	}
