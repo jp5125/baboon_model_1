@@ -12,18 +12,18 @@ public class Experimenter extends Observer
 {
 	
 	//fields for tracking Coalition gene Carriers (CC)
-		public double ccPrime = 0;
-		public double ccPostPrime = 0;
-		public double ccSenescent = 0;
-		public double ccN = 0; //number of dead coalition gene males
+		public double ccPrime = 10;
+		public double ccPostPrime = 10;
+		public double ccSenescent = 10;
+		public double ccN = 30; //number of dead coalition gene males
 		
 		//fields for tracking Non-Carriers of coalition gene (NG)
-		public double ncPrime = 0;
-		public double ncPostPrime = 0;
-		public double ncSenescent = 0;
-		public double ncN = 0; //number of dead non-coalition gene males
+		public double ncPrime = 5;
+		public double ncPostPrime = 5;
+		public double ncSenescent = 5;
+		public double ncN = 15; //number of dead non-coalition gene males
 		
-		double time = state.schedule.getTime();
+		
 		
 
 	public Experimenter(String fileName, String folderName, SimStateSweep state, ParameterSweeper sweeper,
@@ -46,7 +46,7 @@ public class Experimenter extends Observer
 		
 	}
 	
-	public void numberOfCoalitionMales(Environment state) 
+	public void numberOfCoalitionMales(Environment state, double time) 
 	{
 	    Bag groups = state.sparseSpace.getAllObjects();
 	    int malesWithGene = 0;
@@ -113,23 +113,33 @@ public class Experimenter extends Observer
 		}
 	}
 	
+	public void updateReproductiveBarChart(SimState state)
+	{
+		double[] barValues = new double[]
+		{
+			ccPrime,
+			ccPostPrime,
+			ccSenescent,
+			ncPrime,
+			ncPostPrime,
+			ncSenescent
+		};
+		
+		this.upDateHistogramChart((int) state.schedule.getSteps(), barValues, 100);
+		
+	}
+	
+	
 	public void step(SimState state)
 	{
 		super.step(state);
 		if(step % this.state.dataSamplingInterval == 0)
 		{
-			numberOfCoalitionMales((Environment) state);
+			double time = state.schedule.getTime();
 			
-			 double[] barValues = new double[] {
-			            ccPrime,
-			            ccPostPrime,
-			            ccSenescent,
-			            ncPrime,
-			            ncPostPrime,
-			            ncSenescent
-			        };
-
-			        this.upDateHistogramChart(1, barValues, step);
+			numberOfCoalitionMales((Environment) state, time);
+			updateReproductiveBarChart(state);
+			 
 		}
 	}
 
