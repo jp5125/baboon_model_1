@@ -94,7 +94,7 @@ public class Environment extends SimStateSweep implements Steppable
 	{
 		//allow for variable group sizes upon initialization
 		int totalAgentsAssigned = 0;
-		int maxJuveniles = (int) (n * 0.2); //ensure that no group start with more than 20% of their group members as juveniles
+		int maxJuveniles = (int) (n * 0.2); //ensure that the simulation cannot be comprised of more than 20% juveniles upon initialization
 		int totalJuvenilesAssigned = 0;
 		
 		for(int i = 0; i < groups; i++) //for each group
@@ -103,12 +103,6 @@ public class Environment extends SimStateSweep implements Steppable
 			int y = random.nextInt(gridHeight); //give group random y coordinate
 			int groupSize = random.nextInt(maxGroupSize - minGroupSize + 1) + minGroupSize; //generates groups between minimum and maximum group size
 			Bag g = new Bag(groupSize); //create bag called g with capacity equal to groupSize
-			
-			if(totalAgentsAssigned + groupSize > n || i == groups - 1) //if there are not enough agents to assign to the group, or there are n-1 groups already
-			{
-				groupSize = n - totalAgentsAssigned; //assign leftover agents to the last group
-			}
-			
 			
 			for(int j = 0; j < groupSize; j++) //add agents to groups
 			{
@@ -297,6 +291,7 @@ public class Environment extends SimStateSweep implements Steppable
 			observer.initialize(sparseSpace, spaces); // initialize the experimenter by calling initialize in the parent class
 			experimenter = (Experimenter) observer;
 			experimenter.resetVariables();
+			
 		}
 		
 	}

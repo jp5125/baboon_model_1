@@ -3,7 +3,9 @@ import java.awt.Color;
 import spaces.Spaces;
 import sweep.SimStateSweep;
 import sweep.GUIStateSweep;
-
+import sim.util.media.*;
+import sim.util.media.chart.*;
+import sim.util.gui.*;
 
 public class GUI extends GUIStateSweep
 {
@@ -19,6 +21,8 @@ public class GUI extends GUIStateSweep
 	
 	public static void main(String[] args) 
 	{
+		
+		
 		String[] titles = {"Coalition Gene Frequency",
 				"Coalition Gene Male Percentage"}; //A string array, where every entry is the title of a chart
 		String[] x = {"Time Steps", 
@@ -27,7 +31,17 @@ public class GUI extends GUIStateSweep
 				"Percentage of Males with Coalition Gene"}; //A string array, where every entry is the y-axis title
 		
 		GUI.initializeArrayTimeSeriesChart(2, titles, x, y); //creates as many charts as indicated by the first number
-		GUI.initializeHistogramChart("Male Reproductive Success: Gene x LifeStage", "Category", "Total Offspring", 6);
+		
+		
+		 String[] labels = {
+			    "ccPrime", "ccPostPrime", "ccSenescent",
+			    "ncPrime", "ncPostPrime", "ncSenescent"
+			};
+		String chartTitleBar = "Cumulative Male Reproductive Success by Genotype & LifeStage";
+		String xLabelBar = "Genotype x Life Stage";
+		String yLabelBar = "Cumulative Offspring";
+		
+		GUI.initializeBarChart(chartTitleBar, xLabelBar, yLabelBar, labels);
 		
 		
 		// TODO Auto-generated method stub

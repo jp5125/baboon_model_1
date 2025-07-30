@@ -7,6 +7,9 @@ import sweep.CustomData;
 import sweep.ParameterSweeper;
 import sweep.SimStateSweep;
 import java.util.*;
+import sim.util.media.*;
+import sim.util.media.chart.BarChartGenerator;
+import sim.util.gui.*;
 
 public class Experimenter extends Observer
 {
@@ -23,7 +26,7 @@ public class Experimenter extends Observer
 		public double ncSenescent = 5;
 		public double ncN = 15; //number of dead non-coalition gene males
 		
-		
+		public BarChartGenerator reproductiveBarChart; 
 		
 
 	public Experimenter(String fileName, String folderName, SimStateSweep state, ParameterSweeper sweeper,
@@ -113,9 +116,17 @@ public class Experimenter extends Observer
 		}
 	}
 	
+	
 	public void updateReproductiveBarChart(SimState state)
 	{
-		double[] barValues = new double[]
+		
+		if(!this.state.gui.chartTypeBar || this.state.gui.chartBar == null)
+		{
+			System.out.println("Bar Chart is not initialized or null!");
+			return;
+		}
+		
+		double[] values = new double[]
 		{
 			ccPrime,
 			ccPostPrime,
@@ -125,13 +136,39 @@ public class Experimenter extends Observer
 			ncSenescent
 		};
 		
-		this.upDateHistogramChart((int) state.schedule.getSteps(), barValues, 100);
+		String[] labels = new String[] {
+			    "ccPrime", "ccPostPrime", "ccSenescent",
+			    "ncPrime", "ncPostPrime", "ncSenescent"
+			};
 		
+		int time = (int) state.schedule.getSteps();
+		long updateInterval = ((SimStateSweep) state).getDataSamplingInterval();
+		
+		upDateBarChart(time, values, labels, updateInterval);
+				
 	}
 	
 	
 	public void step(SimState state)
 	{
+		
+		super.step(state);
+		int currentStep = (int) state.schedule.getSteps();
+
+		// Force one-time test data injection at step 1
+		if (currentStep == 1)
+		{
+			System.out.println(">>> Forcing sample bar chart data on step 1");
+
+			double[] test = new double[] { 5.0, 3.0, 1.0, 2.0, 4.0, 6.0 };
+			String[] testLabels = new String[] {
+				"ccPrime", "ccPostPrime", "ccSenescent",
+				"ncPrime", "ncPostPrime", "ncSenescent"
+			};
+
+			upDateBarChart(currentStep, test, testLabels, 1000);  // Force chart update
+		}
+		
 		super.step(state);
 		if(step % this.state.dataSamplingInterval == 0)
 		{
