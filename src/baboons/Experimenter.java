@@ -151,24 +151,6 @@ public class Experimenter extends Observer
 	
 	public void step(SimState state)
 	{
-		
-		/*super.step(state);
-		int currentStep = (int) state.schedule.getSteps();
-
-		// Force one-time test data injection at step 1
-		if (currentStep == 1)
-		{
-			System.out.println(">>> Forcing sample bar chart data on step 1");
-
-			double[] test = new double[] { 5.0, 3.0, 1.0, 2.0, 4.0, 6.0 };
-			String[] testLabels = new String[] {
-				"ccPrime", "ccPostPrime", "ccSenescent",
-				"ncPrime", "ncPostPrime", "ncSenescent"
-			};
-
-			upDateBarChart(currentStep, test, testLabels, 1000);  // Force chart update
-		}*/
-		
 		super.step(state);
 		if(step % this.state.dataSamplingInterval == 0)
 		{

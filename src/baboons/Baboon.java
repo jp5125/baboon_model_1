@@ -16,6 +16,7 @@ public class Baboon implements Steppable
 	int x; //x-axis location of agent
 	int y; //y-axis location of agent
 	boolean isJuvenile; // flag for determining if an agent cycles or plays coalition game or not
+	public boolean alive = true;
 	
 	
 	//variables used for calculations
@@ -40,6 +41,8 @@ public class Baboon implements Steppable
 	public int primeOffspring = 0; //tracks number of offspring sired when male is in prime life-history stage
 	public int postPrimeOffspring = 0; //tracks number of offspring sired when male is post-prime
 	public int senescentOffspring = 0; //tracks number of offspring sired when male is senescent
+	private static int nextID = 0;
+	public final int ID;
 	
 	
 	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays, boolean isJuvenile)
@@ -52,6 +55,7 @@ public class Baboon implements Steppable
 		this.isJuvenile = isJuvenile;
 		this.hasCoalitionGene = false;
 		this.fatherHasCoalitionGene = false;
+		this.ID = nextID++;
 		
 		//Draw agents max age from a normal distribution (mean = 9125 days (25 years), SD = 1825 days (+- 5 years))
 		double lifespan = state.random.nextGaussian() * 1825.0 + 9125.0;
@@ -64,19 +68,6 @@ public class Baboon implements Steppable
 			gestationRemaining = 0; //not pregnant initially
 			matingHistory = new HashMap<>(); //Initialize an empty mating history
 		}
-		
-		//initialize male genotype for coalition frequency
-		/*if(male)
-		{
-			if(isJuvenile) //for juvenile males at simulation genesis
-			{
-				this.hasCoalitionGene = state.random.nextDouble() < 0.01; //initialize them as having the coalition genotype with a 1% chance
-			}
-			else //for adult males at genesis
-			{
-				initializeGenotype(0.01, state.random); //initialize them with the coalition gene 1% of the time
-			}
-		}*/
 		
 	}
 	
@@ -96,6 +87,7 @@ public class Baboon implements Steppable
 	//Method for handling agent death, remove the baboon from the schedule and its group
 	public void die(Environment state)
 	{
+		alive = false;
 		event.stop();
 		
 		if(isMale() && !isJuvenile)
@@ -241,8 +233,6 @@ public class Baboon implements Steppable
 			
 			this.fatherHasCoalitionGene = father.hasCoalitionGene; //true if the father had the coalition gene, false if not
 			
-			//record 
-			
 		}
 		else
 		{
@@ -269,6 +259,12 @@ public class Baboon implements Steppable
 		if(currentPopulation >= state.maxPopulation)
 		{
 			//System.out.println("Max population reached, Newborn baboon not added to simulation.");
+			return;
+		}
+		
+		if(group.members.numObjs >= state.maxGroupSize)
+		{
+			//System.out.println("Group full: Newborn baboon not added.")
 			return;
 		}
 		
@@ -357,10 +353,8 @@ public class Baboon implements Steppable
 		}
 	}
 	
-	
-	///--- Debugging / Test methods ---///
-	//method for infant survival check, culls 25% of juvenile agents at 1 year old to reflect infant mortality rate reported in Alberts(2017)
-	/*public void checkInfantSurvival()
+	// culls 25% of juvenile agents at 1 year old to reflect infant mortality rate reported in Alberts(2017)
+	public void checkInfantSurvival()
 	{
 		
 		//Ensure this method only applies to juveniles
@@ -372,28 +366,14 @@ public class Baboon implements Steppable
 			if(state.random.nextDouble() < 0.25)
 			{
 				infantDied++;
-				group.members.remove(this);
-				event.stop();
-				return;
+				die(state);
 			}
 			else
 			{
 				infantSurvived++;
 			}
 		}
-	}*/
-	
-	/*public static void resetInfantCounters()
-	{
-		infantDied = 0;
-		infantSurvived = 0;
-	}*/
-	
-	/*public static String getInfantSurvivalStats()
-	{
-		return  "Number of 1 y/o who died in last 100 time-steps: " + infantDied +
-		           ", Number of 1 y/o who survived in last 100 time-steps: " + infantSurvived;
-	}*/
+	}
 	
 	
 	/// --- Methods for Males ---
@@ -423,7 +403,7 @@ public class Baboon implements Steppable
 			this.x = newGroup.x;
 			this.y = newGroup.y;
 			
-			//Set the baboons group reference to the new group
+			//Set the baboon's group reference to the new group
 			setGroup(newGroup);
 			
 			//Add the baboon to the new group's member list
@@ -463,28 +443,10 @@ public class Baboon implements Steppable
 		
 	}
 	
-	//male strategy genotype
-	public void maleStrategy()
-	{
-		/*
-		 * all males can be sneakers, while some males have coalition strategy gene and others do not. 
-		 * 
-		 * Coalition formation is haploid, males pass their gene to male offspring with a 1% mutation rate
-		 * 
-		 * males must have coalition formation gene in order to solicit/participate in a coalition
-		 */
-	}
-	
-    /* --- The Step Method ---
-     In each simulation step, baboons update their state:
-	 - Agents die if too old
-     - Females update their reproductive cycle.
-     - New agents are born
-     - Newborn males immigrate
-     - Newborn females begin cycling
-     - **Male dominance is updated at the group level**
-    */
-     
+    public String baboonIdToString()
+    {
+    	return "Baboon[ID=" + ID + ", sex=" + (isMale() ? "M" : "F") + ", age=" + age + "]";
+    }
 
 
 	@Override
@@ -492,7 +454,11 @@ public class Baboon implements Steppable
 	{
 		age++; //increase age by 1 timestep (1 day)
 		
-		
+		if(isJuvenile && age == 365)
+		{
+			checkInfantSurvival();
+			if(!alive) return;
+		}
 		if(isJuvenile)
 		{
 			if((isMale() && age >= 2555) || (!isMale() && age >= 2190)) //if juvenile is male, matures at 7 y/o, if juvenile is female matures at 6

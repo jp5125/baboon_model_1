@@ -4,11 +4,13 @@ import java.awt.Color;
 import sim.engine.*;
 import sim.portrayal.simple.OvalPortrayal2D;
 import sim.util.Bag;
+import sim.util.*;
 import sweep.GUIStateSweep;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.*;
 
 public class Group implements Steppable
 {
@@ -88,15 +90,22 @@ public class Group implements Steppable
 	//Uses an ArrayList to keep track of the dominance hierarchy instead of a bag to avoid ordering errors with repeatedy drawing from a bag
 	public void updateDominanceHierarchyArray()
 	{
-		//First, collect all male baboons from the members bag and put into ArrayList
+		//Collect all male baboons from the members bag and put into ArrayList
 		ArrayList<Baboon> males = new ArrayList<>();
 		for(int i = 0; i < members.numObjs; i++)
 		{
 			Baboon b = (Baboon)members.objs[i];
-			if(b.isMale())
+			if(b.isMale() && !b.isJuvenile )
 			{
 				males.add(b);
 			}
+		}
+		
+		//reset all ranks for adult males in the group
+		for(int i = 0; i < males.size(); i++)
+		{
+			Baboon b = (Baboon) members.objs[i];
+			b.dominanceRank = -1;
 		}
 		
 		//Next, calculate fighting ability based on age for each male
@@ -160,7 +169,7 @@ public class Group implements Steppable
 		for(Object obj : members)
 		{
 			Baboon b = (Baboon) obj;
-			if(b.isMale())
+			if(b.isMale() && !b.isJuvenile)
 			{
 				sortedMales.add(b);
 			}
@@ -193,6 +202,13 @@ public class Group implements Steppable
 			female.recordMating(consortMale); //record the mating event for the initial consortship
 			
 		}
+		/*System.out.println("=== Initial Consort Assignments ===");
+		for (Baboon male : consortMales) {
+		    System.out.println("Consort Male | Rank: " + male.dominanceRank +
+		                       " | FA: " + male.fightingAbility +
+		                       " | LifeStage: " + male.getLifeStage() +
+		                       " | hasCoalitionGene: " + male.hasCoalitionGene);
+		}*/
 		
 		//Identify males eligible to form a coalition
 		ArrayList<Baboon> coalitionaryMales = new ArrayList<>();
@@ -207,6 +223,14 @@ public class Group implements Steppable
 		
 		//randomly pair males in coalitionaryMales into coalitions (add more detail in later model iteration for strategic pairing)
 		 ArrayList<ArrayList<Baboon>> coalitions = formCoalitions(coalitionaryMales);
+		 
+		 /*System.out.println("=== Coalition Participants ===");
+		 for (Baboon male : coalitionaryMales) {
+		     System.out.println("Coalition Male | Rank: " + male.dominanceRank +
+		                        " | FA: " + male.fightingAbility +
+		                        " | LifeStage: " + male.getLifeStage() +
+		                        " | hasCoalitionGene: " + male.hasCoalitionGene);
+		 }*/
 		
 		//coalitions challenge consorts and then resolve the conflicts through the helper method
 		 resolveCoalitionChallenges(coalitions);
@@ -361,6 +385,26 @@ public class Group implements Steppable
 	        event.stop();
 	        System.out.println("Group dispersed from (" + x + ", " + y + ") to (" + newGroup.x + ", " + newGroup.y + ")");
 	    }
+	}
+	
+	//method for when group reaches maximum size
+	public void Fission()
+	{
+		//First, create new group and place nearby
+		Group newGroup = new Group(state);
+		Int2D currentLocation = state.sparseSpace.getObjectLocation(this);
+		int dx = state.random.nextInt(5) - 2; //-2 to +2 for new x-axis value
+		int dy = state.random.nextInt(5) - 2; //same for y-axis
+		Int2D newLocation = new Int2D(
+				Math.min(state.gridWidth - 1, Math.max(0, currentLocation.x + dx)),
+				Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
+				);
+		state.sparseSpace.setObjectLocation(newGroup, newLocation);
+		state.schedule.scheduleRepeating(newGroup);
+		
+		//We want the fission to occur along female kinship lines, so we must collect the matrilines
+		HashMap<Integer, Bag> matrilines = new HashMap<>();
+		
 	}
 	
 	//remove group from simulation

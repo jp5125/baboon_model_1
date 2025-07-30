@@ -124,6 +124,10 @@ public class Environment extends SimStateSweep implements Steppable
 				}
 				
 				Baboon b = new Baboon(this, isMale, x, y, ageInDays, isJuvenile); //create a new baboon for each baboon in the group
+				if(b.isMale())
+				{
+					b.initializeGenotype(mutationRate, random);
+				}
 				g.add(b);
 			}
 			
@@ -165,7 +169,7 @@ public class Environment extends SimStateSweep implements Steppable
 			for(Object obj : groups) //this logic draws the first group from the bag of neighbors, sets it to nearestGroup, and breaks
 			{
 				Group g = (Group) obj; 
-				if(g.members != null && g.members.numObjs > 0)
+				if(g.members != null && g.members.numObjs > 0 && g.members.numObjs < maxGroupSize)
 				{
 					nearestGroup = g;
 					break;
@@ -229,11 +233,37 @@ public class Environment extends SimStateSweep implements Steppable
 		int adultFemaleCount = 0;
 		int coalitionGeneCount = 0;
 		double totalFightingAbility = 0.0;
+		int maxDominanceRank = 0;
+		int maxGroupSizeObserved = 0;
+		int totalDominanceRank = 0;
+		int totalDominanceHierarchySize = 0;  // sum of adult males per group
+		int groupCount = 0;                   // number of groups
 		
 		for(Object obj : sparseSpace.getAllObjects())
 		{
 			if(obj instanceof Group group)
 			{
+				groupCount++;
+				
+				int groupAdultMales = 0;
+				for (int i = 0; i < group.members.numObjs; i++)
+				{
+					Baboon b = (Baboon) group.members.objs[i];
+					if (b.isMale() && !b.isJuvenile)
+					{
+						groupAdultMales++;
+					}
+				}
+				totalDominanceHierarchySize += groupAdultMales;
+				
+				
+				if (group.members.numObjs > maxGroupSizeObserved)
+	            {
+	                maxGroupSizeObserved = group.members.numObjs;
+	            }
+				
+				HashSet<Integer> seenRanks = new HashSet<>();
+				
 				for(int i = 0; i < group.members.numObjs; i++)
 				{
 					Baboon b = (Baboon) group.members.objs[i];
@@ -248,10 +278,24 @@ public class Environment extends SimStateSweep implements Steppable
 					{
 						adultMaleCount++;
 						totalFightingAbility += b.fightingAbility;
+						totalDominanceRank += b.dominanceRank;
 						
 						if(b.hasCoalitionGene)
 						{
 							coalitionGeneCount++;
+						}
+						if(b.dominanceRank > group.members.numObjs) //to check for error where individuals have rank greater than group size
+						{
+							System.out.println("Baboon ID " + b.ID + " has INVALID rank " + b.dominanceRank +
+									" (group size: " + group.members.numObjs + ")");
+						}
+						if(!seenRanks.add(b.dominanceRank)) //ensure no duplicate ranks
+						{
+							System.out.println("Duplicate rank " + b.dominanceRank + " found (Baboon ID " + b.ID + ")");
+						}
+						if(b.dominanceRank > maxDominanceRank)
+						{
+							maxDominanceRank = b.dominanceRank;
 						}
 					} 
 					if(!b.isMale() && !b.isJuvenile)
@@ -266,6 +310,8 @@ public class Environment extends SimStateSweep implements Steppable
 		int totalAdults = adultMaleCount + adultFemaleCount;
 		double avgFightingAbility = adultMaleCount > 0 ? totalFightingAbility / adultMaleCount : 0.0;
 		double coalitionGeneFreq = adultMaleCount > 0 ? (double) coalitionGeneCount / adultMaleCount : 0.0;
+		double avgDominanceRank = adultMaleCount > 0 ? (double) totalDominanceRank / adultMaleCount : 0.0;
+		double avgDominanceHierarchySize = groupCount > 0 ? (double) totalDominanceHierarchySize / groupCount : 0.0;
 		
 		System.out.printf(
 				"[Step %d] Total: %d | Adults: %d | Juveniles: %d | Males: %d | Females: %d | Coalition Gene: %d (%.2f%%) | Avg FA: %.3f\n",
@@ -273,9 +319,10 @@ public class Environment extends SimStateSweep implements Steppable
 		        coalitionGeneCount, coalitionGeneFreq * 100, avgFightingAbility
 		    );
 		
-		//used in test infant survival method
-		//System.out.println(Baboon.getInfantSurvivalStats());
-		//Baboon.resetInfantCounters();
+		System.out.printf("Max Dominance Rank Observed: %d\n", maxDominanceRank);
+		System.out.printf("Max Group Size Observed: %d\n", maxGroupSizeObserved);
+		System.out.printf("Average Dominance Rank (Adult Males): %.2f\n", avgDominanceRank);
+		System.out.printf("Average Dominance Hierarchy Size (Adult Males per Group): %.2f\n", avgDominanceHierarchySize);
 	}
 	
 	public void start()
