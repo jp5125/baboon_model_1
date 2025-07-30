@@ -152,7 +152,7 @@ public class Experimenter extends Observer
 	public void step(SimState state)
 	{
 		
-		super.step(state);
+		/*super.step(state);
 		int currentStep = (int) state.schedule.getSteps();
 
 		// Force one-time test data injection at step 1
@@ -167,7 +167,7 @@ public class Experimenter extends Observer
 			};
 
 			upDateBarChart(currentStep, test, testLabels, 1000);  // Force chart update
-		}
+		}*/
 		
 		super.step(state);
 		if(step % this.state.dataSamplingInterval == 0)

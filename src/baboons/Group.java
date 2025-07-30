@@ -199,7 +199,7 @@ public class Group implements Steppable
 		
 		for(Baboon male : sortedMales) //for each male in the sorted list of males by rank
 		{
-			if(male.hasCoalitionGene && !consortMales.contains(male) && male.getLifeStage() == LifeStage.POST_PRIME || male.getLifeStage() == LifeStage.SENESCENT) //if the male has a the coalition gene and is not a consort
+			if(male.hasCoalitionGene && !consortMales.contains(male) && (male.getLifeStage() == LifeStage.POST_PRIME || male.getLifeStage() == LifeStage.SENESCENT)) //if the male has a the coalition gene and is not a consort
 			{
 				coalitionaryMales.add(male);
 			}
