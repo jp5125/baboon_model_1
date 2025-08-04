@@ -5,6 +5,7 @@ import sweep.SimStateSweep;
 import sim.util.Bag;
 import sim.engine.*;
 import java.util.*;
+import java.util.ArrayList;
 
 public class Environment extends SimStateSweep implements Steppable
 {
@@ -104,6 +105,9 @@ public class Environment extends SimStateSweep implements Steppable
 			int groupSize = random.nextInt(maxGroupSize - minGroupSize + 1) + minGroupSize; //generates groups between minimum and maximum group size
 			Bag g = new Bag(groupSize); //create bag called g with capacity equal to groupSize
 			
+			
+			ArrayList<Baboon> adultFemales = new ArrayList<>();
+			
 			for(int j = 0; j < groupSize; j++) //add agents to groups
 			{
 				boolean isMale = (random.nextDouble() >= 0.714); //2.5:1 OSR
@@ -126,7 +130,21 @@ public class Environment extends SimStateSweep implements Steppable
 				Baboon b = new Baboon(this, isMale, x, y, ageInDays, isJuvenile); //create a new baboon for each baboon in the group
 				if(b.isMale())
 				{
-					b.initializeGenotype(mutationRate, random);
+					b.initializeGenotype(mutationRate, random); //initialize cooperation gene in starting males
+					
+					if(isJuvenile && !adultFemales.isEmpty())
+					{
+						Baboon mom = adultFemales.get(random.nextInt(adultFemales.size()));
+						b.matrilineID = mom.matrilineID;
+					}
+				}
+				if(!b.isMale())
+				{
+					b.matrilineID = "mat_" + b.ID; //create matrilines based on starting females 
+					if(!isJuvenile)
+					{
+						adultFemales.add(b);
+					}
 				}
 				g.add(b);
 			}

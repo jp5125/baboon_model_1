@@ -28,16 +28,23 @@ public class Group implements Steppable
 	public Group(Environment state, int x, int y, Bag members)
 	{
 		super();
+		this.state = state;
 		this.x = x;
 		this.y = y;
 		this.members = members;
-		this.state = state;
 		
 		for(int i = 0; i<this.members.numObjs; i++)
 		{
 			Baboon b = (Baboon)this.members.objs[i];
 			b.setGroup(this);
 		}
+	}
+	
+	public Group(Environment state) //specifically for group.fission()
+	{
+		super();
+		this.state = state;
+		this.members = new Bag();
 	}
 	
 	//initial dominance hierarchy implementation, unsure of hidden bugs due to redrawing from a bag so this method was re-implemented using an ArrayList below
@@ -365,7 +372,7 @@ public class Group implements Steppable
 	//group dispersion utility method
 	public void groupDisperse(Environment state) 
 	{
-	    if (members.numObjs < state.minGroupSize && state.getTotalGroups() > state.minGroups) 
+	    if (members.numObjs < state.minGroupSize) 
 	    {
 	        Group newGroup = state.findGroupNearest(this.x, this.y, state.sparseSpace.TOROIDAL);
 	        if (newGroup == null || newGroup.members.numObjs >= state.maxGroupSize) 
@@ -388,22 +395,143 @@ public class Group implements Steppable
 	}
 	
 	//method for when group reaches maximum size
-	public void Fission()
+	public void fission(Environment state)
 	{
-		//First, create new group and place nearby
-		Group newGroup = new Group(state);
-		Int2D currentLocation = state.sparseSpace.getObjectLocation(this);
-		int dx = state.random.nextInt(5) - 2; //-2 to +2 for new x-axis value
-		int dy = state.random.nextInt(5) - 2; //same for y-axis
-		Int2D newLocation = new Int2D(
-				Math.min(state.gridWidth - 1, Math.max(0, currentLocation.x + dx)),
-				Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
-				);
-		state.sparseSpace.setObjectLocation(newGroup, newLocation);
-		state.schedule.scheduleRepeating(newGroup);
+		if(members.numObjs >= state.maxGroupSize)
+		{
+			
+			// first, create new group and place nearby
+			Group newGroup = new Group(state); //generate a new empty group
+			Int2D currentLocation = state.sparseSpace.getObjectLocation(this); //the new group's location is the same as the group that runs the group.fission()
+			int dx = state.random.nextInt(5) - 2; //-2 to +2 for new x-axis value
+			int dy = state.random.nextInt(5) - 2; //same for y-axis
+			Int2D newLocation = new Int2D(
+					Math.min(state.gridWidth - 1, Math.max(0, currentLocation.x + dx)),
+					Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
+					); //determines new location for the new group
+			state.sparseSpace.setObjectLocation(newGroup, newLocation); //then sets new groups new location
+			double currentTime = state.schedule.getTime();
+			newGroup.event = state.schedule.scheduleRepeating(currentTime + 1, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
 		
-		//We want the fission to occur along female kinship lines, so we must collect the matrilines
-		HashMap<Integer, Bag> matrilines = new HashMap<>();
+				
+			/*
+			 * We want fission to happen based on matrilineal splitting, so related females will move to new group or stay in old
+			 * group together. Males stay/leave randomly, except cooperating males will join same group. 
+			 * We use a HashMap to collect matrilines, where matrilineID is the key and a bag of female objects containing
+			 * the memebers of the matriline is the value. Males are stored in their own bag and don't need to be sorted based
+			 * on matriline.
+			 */
+		
+			HashMap<String, Bag> matrilines = new HashMap<>();
+			Bag adultMales = new Bag();
+		
+			for(int i = 0; i < members.numObjs; i++) //iterate across all group members
+			{
+				Baboon b = (Baboon) members.objs[i];
+			
+				if (!b.isMale() || (b.isMale() && b.isJuvenile)) // Female or juvenile male
+				{
+					Bag groupBag = matrilines.get(b.matrilineID); 
+					if (groupBag == null) 
+					{
+						groupBag = new Bag();
+						matrilines.put(b.matrilineID, groupBag);
+					}
+					groupBag.add(b);
+				}
+				else 
+				{
+					adultMales.add(b);
+				}
+			
+			}
+			//Once female sorting is complete, we want to separate matrilines into the new and old group
+			ArrayList<String> matrilineKeys = new ArrayList<>(matrilines.keySet()); //create an arrayList of matrilineIDs
+			Bag matrilineKeyBag = new Bag(matrilineKeys);
+			matrilineKeyBag.shuffle(state.random);
+		
+			for(int i = 0; i < matrilineKeyBag.size(); i++) //for each matriline in the arrayList
+			{
+				String matrilineID = (String) matrilineKeyBag.objs[i];
+				Bag groupBag = matrilines.get(matrilineID);
+				Group targetGroup;
+			
+				if (i % 2 == 0) 
+				{
+					targetGroup = this; // assign to the original group
+				} 
+				else 
+				{
+					targetGroup = newGroup; // assign to the newly created group
+				}
+
+				for (Object obj : groupBag)
+				{
+					Baboon b = (Baboon) obj;
+					this.members.remove(b);
+					targetGroup.members.add(b);
+					b.setGroup(targetGroup);
+					if(b.event == null)
+					{
+						b.event = state.schedule.scheduleRepeating(1,0,b);
+					}
+				}
+				//otherwise the female remains in the old group
+			}
+		
+			//now we need to randomly assign males to either stay in the old group or join the new group
+			Bag coalitionMales = new Bag();
+			Bag nonCoalitionMales = new Bag();
+		
+			for(Object obj : adultMales) //for each object in the males bag
+			{
+				Baboon m = (Baboon) obj; //cast this object as type Baboon
+				if(m.hasCoalitionGene)
+				{
+					coalitionMales.add(m);
+				}
+				else
+				{
+					nonCoalitionMales.add(m);
+				}
+			}
+		
+			//shuffle and move half from each bag of males
+			coalitionMales.shuffle(state.random);
+			nonCoalitionMales.shuffle(state.random);
+			int coalitionSplit = coalitionMales.numObjs / 2;
+			int nonCoalitionSplit = nonCoalitionMales.numObjs / 2;
+	    
+			for(int i = 0; i < coalitionMales.numObjs; i++)
+			{
+				Baboon m = (Baboon) coalitionMales.objs[i];
+				if(i < coalitionSplit)
+				{
+					members.remove(m);
+					m.setGroup(newGroup);
+					newGroup.members.add(m);
+					if(m.event == null)
+					{
+						m.event = state.schedule.scheduleRepeating(1, 0, m);
+					}
+				}
+			}
+	    
+			for(int i = 0; i < nonCoalitionMales.numObjs; i++)
+			{
+				Baboon m = (Baboon) nonCoalitionMales.objs[i]; 
+				if(i < nonCoalitionSplit)
+				{
+					members.remove(m);
+					m.setGroup(newGroup);
+					newGroup.members.add(m);
+					if(m.event == null)
+					{
+						m.event = state.schedule.scheduleRepeating(1,0,m);
+					}
+				}
+			}
+		}
 		
 	}
 	
@@ -427,6 +555,7 @@ public class Group implements Steppable
 		if(die(eState))
 			return;
 		groupDisperse(eState);
+		fission(eState);
 		updateDominanceHierarchyArray();
 		coalitionGame();
 	}

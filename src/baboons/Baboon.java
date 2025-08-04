@@ -31,6 +31,7 @@ public class Baboon implements Steppable
 	public Baboon currentConsortMale = null; //sets the current consort male to a fertile female 
 	private static int infantDied = 0;
 	private static int infantSurvived = 0;
+	public String matrilineID = null;
 	
 	//Variables for males
 	double fightingAbility; //double between 1.0 and 0.0, drops as males age
@@ -278,6 +279,8 @@ public class Baboon implements Steppable
 		boolean isJuvenile = true;
 		
 		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, initialAgeDays, isJuvenile); // Newborns are created and added to simulation at weaning (185 days post birth)
+		
+		newborn.matrilineID = this.matrilineID; //track the matriline of each baboon for group.fission()
 		
 		if(newbornIsMale) //decide if male will have coalition gene or not
 		{
