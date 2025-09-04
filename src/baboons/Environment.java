@@ -341,6 +341,7 @@ public class Environment extends SimStateSweep implements Steppable
 		System.out.printf("Max Group Size Observed: %d\n", maxGroupSizeObserved);
 		System.out.printf("Average Dominance Rank (Adult Males): %.2f\n", avgDominanceRank);
 		System.out.printf("Average Dominance Hierarchy Size (Adult Males per Group): %.2f\n", avgDominanceHierarchySize);
+		System.out.println(" ");
 	}
 	
 	public void start()
