@@ -100,6 +100,10 @@ public class Baboon implements Steppable
 		if(group != null && group.members != null)
 		{
 		group.members.remove(this);
+		if(isMale() && !isJuvenile)
+			{
+				group.updateDominanceHierarchyArray();
+			}
 		}
 		else
 		{
@@ -393,6 +397,7 @@ public class Baboon implements Steppable
 	//dispersal method for adult males
 	public void maleImmigration()
 	{
+		Group oldGroup = this.group;
 		//Use findGroupNearest method to find a new group
 		Group newGroup = state.findGroupNearest(x, y, state.sparseSpace.TOROIDAL);
 		
@@ -411,6 +416,9 @@ public class Baboon implements Steppable
 			
 			//Add the baboon to the new group's member list
 			newGroup.members.add(this);
+			
+			oldGroup.updateDominanceHierarchyArray();
+			newGroup.updateDominanceHierarchyArray();
 		}
 	}
 	

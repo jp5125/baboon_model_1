@@ -385,6 +385,7 @@ public class Group implements Steppable
 	            b.y = newGroup.y;
 	            b.setGroup(newGroup);
 	            newGroup.members.add(b);
+	            newGroup.updateDominanceHierarchyArray();
 	        }
 
 	        members.clear();
