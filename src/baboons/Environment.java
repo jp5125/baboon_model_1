@@ -137,16 +137,69 @@ public class Environment extends SimStateSweep implements Steppable
 						Baboon mom = adultFemales.get(random.nextInt(adultFemales.size()));
 						b.matrilineID = mom.matrilineID;
 					}
-				}
-				if(!b.isMale())
-				{
-					b.matrilineID = "mat_" + b.ID; //create matrilines based on starting females 
-					if(!isJuvenile)
+					if(isJuvenile && adultFemales.isEmpty())
 					{
-						adultFemales.add(b);
+						b.matrilineID = null; //set juvenile male matrilineID null for now
+					}
+					//note, adult males at genesis do not need a matrilineID, as mID is only important for juvenile males during fission
+				}
+				if(!b.isMale()) //if b is not a male
+				{
+					if(!isJuvenile) // if b is not male and is not juvenile
+					{
+					b.matrilineID = "mat_" + b.ID; //create matrilines based on starting females 
+					adultFemales.add(b); //add this individual to the group's bag of adultFemales
+					}
+					else
+					{
+						if(!adultFemales.isEmpty()) //if there are adult females that were created before a juvenile was
+						{
+							Baboon mom = adultFemales.get(random.nextInt(adultFemales.size())); //randomly select one as the mother
+							b.matrilineID = mom.matrilineID; //assign mother's matrilineID as new juvenile's matrilineID
+						}
+						else
+						{
+							b.matrilineID = null; //if juveniles are created before any adults, we will set their matrilineID to null until an adult is created 
+						}
 					}
 				}
 				g.add(b);
+			}
+			
+			//second pass for assigning matrilines to juveniles that were created before any adults
+			ArrayList<Baboon> adultFemales2 = new ArrayList<>();
+			for(int k = 0; k < g.numObjs; k++)
+			{
+				Baboon mom = (Baboon) g.objs[k];
+				if(!mom.isMale() && !mom.isJuvenile)
+				{
+					adultFemales2.add(mom);
+				}
+			}
+			
+			if(!adultFemales2.isEmpty())
+			{
+				for(int k = 0; k < g.numObjs; k++)
+				{
+					Baboon juv = (Baboon) g.objs[k];
+					if(juv.matrilineID == null && !juv.isJuvenile)
+					{
+						Baboon mom = adultFemales2.get(random.nextInt(adultFemales2.size()));
+						juv.matrilineID = mom.matrilineID;
+					}
+				}
+			}
+			else //to account for rare cases where no adult females were put into a group at genesis (extremely rare but a statistical possibility)
+			{ 
+				
+				for(int k = 0; k < g.numObjs; k++)
+				{
+					Baboon b = (Baboon) g.objs[k];
+					if(b.matrilineID == null)
+					{
+						b.matrilineID = "Orph_mat___" + b.ID;
+					}
+				}
 			}
 			
 			totalAgentsAssigned += groupSize; //add the number of agents in the newly formed group to our count of totalAgentsAssigned

@@ -560,7 +560,7 @@ public class Group implements Steppable
 		if(die(eState))
 			return;
 		groupDisperse(eState);
-		//fission(eState);
+		fission(eState);
 		updateDominanceHierarchyArray();
 		coalitionGame();
 	}
