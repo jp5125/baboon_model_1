@@ -311,7 +311,8 @@ public class Baboon implements Steppable
 		}
 		
 		// Schedule the newborn for stepping in the simulation
-		newborn.event = state.schedule.scheduleRepeating(newborn);
+		double now = state.schedule.getTime();
+		newborn.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, newborn, state.scheduleTimeInterval);
 		
 		//clear father genotype information after birth
 		fatherHasCoalitionGene = false;
