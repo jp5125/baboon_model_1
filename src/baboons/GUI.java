@@ -41,7 +41,7 @@ public class GUI extends GUIStateSweep
 		String xLabelBar = "Genotype x Life Stage";
 		String yLabelBar = "Cumulative Offspring";
 		
-		GUI.initializeBarChart(chartTitleBar, xLabelBar, yLabelBar, labels);
+		//GUI.initializeBarChart(chartTitleBar, xLabelBar, yLabelBar, labels);
 		
 		
 		// TODO Auto-generated method stub

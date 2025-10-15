@@ -116,7 +116,7 @@ public class Experimenter extends Observer
 		}
 	}
 	
-	
+	/*
 	public void updateReproductiveBarChart(SimState state)
 	{
 		
@@ -144,10 +144,10 @@ public class Experimenter extends Observer
 		int time = (int) state.schedule.getSteps();
 		long updateInterval = ((SimStateSweep) state).getDataSamplingInterval();
 		
-		upDateBarChart(time, values, labels, updateInterval);
+		upDatBarChart(time, values, labels, updateInterval);
 				
 	}
-	
+	*/
 	
 	public void step(SimState state)
 	{
@@ -157,7 +157,7 @@ public class Experimenter extends Observer
 			double time = state.schedule.getTime();
 			
 			numberOfCoalitionMales((Environment) state, time);
-			updateReproductiveBarChart(state);
+			//updateReproductiveBarChart(state);
 			 
 		}
 	}

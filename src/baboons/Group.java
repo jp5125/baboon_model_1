@@ -395,9 +395,13 @@ public class Group implements Steppable
 	}
 	
 	//method for when group reaches maximum size
-	public void fission(Environment state)
+	
+	  public void fission(Environment state)
+	 
 	{
-		if(members.numObjs >= state.maxGroupSize)
+		double now = state.schedule.getTime(); //current time step for scheduling new groups
+		  
+		if(members.numObjs >= state.maxGroupSize) //if a group becomes the size of, or supasses, the maximum group size
 		{
 			
 			// first, create new group and place nearby
@@ -410,16 +414,15 @@ public class Group implements Steppable
 					Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
 					); //determines new location for the new group
 			state.sparseSpace.setObjectLocation(newGroup, newLocation); //then sets new groups new location
-			double currentTime = state.schedule.getTime();
-			newGroup.event = state.schedule.scheduleRepeating(currentTime + 1, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
+			newGroup.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
 		
 				
 			/*
 			 * We want fission to happen based on matrilineal splitting, so related females will move to new group or stay in old
 			 * group together. Males stay/leave randomly, except cooperating males will join same group. 
 			 * We use a HashMap to collect matrilines, where matrilineID is the key and a bag of female objects containing
-			 * the memebers of the matriline is the value. Males are stored in their own bag and don't need to be sorted based
-			 * on matriline.
+			 * the memebers of the matriline is the value. Adult Males are stored in their own bag and don't need to be sorted based
+			 * on matriline, however all juveniles regardless of sex migrate with their mothers matriline (hence why males have a matriline ID).
 			 */
 		
 			HashMap<String, Bag> matrilines = new HashMap<>();
@@ -473,7 +476,7 @@ public class Group implements Steppable
 					b.setGroup(targetGroup);
 					if(b.event == null)
 					{
-						b.event = state.schedule.scheduleRepeating(1,0,b);
+						b.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, b, state.scheduleTimeInterval);
 					}
 				}
 				//otherwise the female remains in the old group
@@ -512,7 +515,7 @@ public class Group implements Steppable
 					newGroup.members.add(m);
 					if(m.event == null)
 					{
-						m.event = state.schedule.scheduleRepeating(1, 0, m);
+						m.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, m, state.scheduleTimeInterval);
 					}
 				}
 			}
@@ -527,13 +530,15 @@ public class Group implements Steppable
 					newGroup.members.add(m);
 					if(m.event == null)
 					{
-						m.event = state.schedule.scheduleRepeating(1,0,m);
+						m.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval,0,m, state.scheduleTimeInterval);
 					}
 				}
 			}
 		}
 		
 	}
+	
+	
 	
 	//remove group from simulation
 	public boolean die(Environment state)
@@ -555,7 +560,7 @@ public class Group implements Steppable
 		if(die(eState))
 			return;
 		groupDisperse(eState);
-		fission(eState);
+		//fission(eState);
 		updateDominanceHierarchyArray();
 		coalitionGame();
 	}

@@ -11,7 +11,7 @@ public class Environment extends SimStateSweep implements Steppable
 {
 	//population variables
 	public int n =10000; //number of baboons at simulation start
-	public int groups = 100; //number of groups at simulation start
+	public int groups = 175; //number of groups at simulation start
 	public int minGroups = 20;
 	public int minGroupSize = 12;
 	public int maxGroupSize = 125; //***adjust group sizes to capture that only adults are in population, no juveniles. thus total group size is smaller than in wild***

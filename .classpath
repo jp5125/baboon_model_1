@@ -7,6 +7,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/MASON"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/MASONplus9"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/MASONplus9.1"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
