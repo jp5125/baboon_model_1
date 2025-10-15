@@ -182,7 +182,7 @@ public class Environment extends SimStateSweep implements Steppable
 				for(int k = 0; k < g.numObjs; k++)
 				{
 					Baboon juv = (Baboon) g.objs[k];
-					if(juv.matrilineID == null && !juv.isJuvenile)
+					if(juv.matrilineID == null && juv.isJuvenile)
 					{
 						Baboon mom = adultFemales2.get(random.nextInt(adultFemales2.size()));
 						juv.matrilineID = mom.matrilineID;
