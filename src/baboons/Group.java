@@ -111,7 +111,7 @@ public class Group implements Steppable
 		//reset all ranks for adult males in the group
 		for(int i = 0; i < males.size(); i++)
 		{
-			Baboon b = (Baboon) members.objs[i];
+			Baboon b = males.get(i);
 			b.dominanceRank = -1;
 		}
 		
