@@ -414,6 +414,8 @@ public class Group implements Steppable
 					Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
 					); //determines new location for the new group
 			state.sparseSpace.setObjectLocation(newGroup, newLocation); //then sets new groups new location
+			newGroup.x = newLocation.x;
+			newGroup.y = newLocation.y;
 			newGroup.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
 		
 				
@@ -468,12 +470,15 @@ public class Group implements Steppable
 					targetGroup = newGroup; // assign to the newly created group
 				}
 
-				for (Object obj : groupBag)
+				for (int j = 0; j < groupBag.numObjs; j++)
 				{
-					Baboon b = (Baboon) obj;
+					Baboon b = (Baboon) groupBag.objs[j];
 					this.members.remove(b);
 					targetGroup.members.add(b);
 					b.setGroup(targetGroup);
+					b.x = targetGroup.x;
+					b.y = targetGroup.y;
+					
 					if(b.event == null)
 					{
 						b.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, b, state.scheduleTimeInterval);
@@ -486,9 +491,9 @@ public class Group implements Steppable
 			Bag coalitionMales = new Bag();
 			Bag nonCoalitionMales = new Bag();
 		
-			for(Object obj : adultMales) //for each object in the males bag
+			for(int i = 0; i < adultMales.numObjs; i++) //for each object in the males bag
 			{
-				Baboon m = (Baboon) obj; //cast this object as type Baboon
+				Baboon m = (Baboon) adultMales.objs[i]; //cast this object as type Baboon
 				if(m.hasCoalitionGene)
 				{
 					coalitionMales.add(m);
@@ -513,6 +518,10 @@ public class Group implements Steppable
 					members.remove(m);
 					m.setGroup(newGroup);
 					newGroup.members.add(m);
+					
+					m.x = newGroup.x;
+					m.y = newGroup.y;
+					
 					if(m.event == null)
 					{
 						m.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, m, state.scheduleTimeInterval);
@@ -528,12 +537,19 @@ public class Group implements Steppable
 					members.remove(m);
 					m.setGroup(newGroup);
 					newGroup.members.add(m);
+					
+					m.x = newGroup.x;
+					m.y = newGroup.y;
+					
 					if(m.event == null)
 					{
 						m.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval,0,m, state.scheduleTimeInterval);
 					}
 				}
 			}
+			//update dominance hierarchies after group shuffling
+			this.updateDominanceHierarchyArray();
+			newGroup.updateDominanceHierarchyArray();
 		}
 		
 	}
