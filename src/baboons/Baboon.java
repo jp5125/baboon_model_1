@@ -491,7 +491,7 @@ public class Baboon implements Steppable
 		}
 		
 		//update female reproduction
-		if(!male || !isJuvenile)
+		if(!male && !isJuvenile)
 		{
 			cycleUpdate();
 		}
