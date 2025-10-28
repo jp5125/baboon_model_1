@@ -426,6 +426,13 @@ public class Group implements Steppable
 	
 	//method for when group reaches maximum size
 	
+	/*
+	 * This method, while more detailed (females split by matriline, males migrate preferentially based on coalition gene status)
+	 * created several spacing bugs that caused small clusters of groups to develop and constantly exchange individuals. Almost like an accidental
+	 * assortment mechanism. We don't want this because it prevents exchange of individuals outside of localized clusters once the simulation is off the ground
+	 * the fissionUpdated() method is used to account for these artifacts and produce the spatial behavior we want to explore coalitionary dynamics
+	 * 
+	 
 	  public void fission(Environment state)
 	 
 	{
@@ -449,13 +456,13 @@ public class Group implements Steppable
 			newGroup.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
 		
 				
-			/*
-			 * We want fission to happen based on matrilineal splitting, so related females will move to new group or stay in old
-			 * group together. Males stay/leave randomly, except cooperating males will join same group. 
-			 * We use a HashMap to collect matrilines, where matrilineID is the key and a bag of female objects containing
-			 * the memebers of the matriline is the value. Adult Males are stored in their own bag and don't need to be sorted based
-			 * on matriline, however all juveniles regardless of sex migrate with their mothers matriline (hence why males have a matriline ID).
-			 */
+			
+			 // We want fission to happen based on matrilineal splitting, so related females will move to new group or stay in old
+			 // group together. Males stay/leave randomly, except cooperating males will join same group. 
+			 // We use a HashMap to collect matrilines, where matrilineID is the key and a bag of female objects containing
+			 // the memebers of the matriline is the value. Adult Males are stored in their own bag and don't need to be sorted based
+			 // on matriline, however all juveniles regardless of sex migrate with their mothers matriline (hence why males have a matriline ID).
+			 
 		
 			HashMap<String, Bag> matrilines = new HashMap<>();
 			Bag adultMales = new Bag();
@@ -583,7 +590,136 @@ public class Group implements Steppable
 		}
 		
 	}
+	*/
 	
+	public void fissionUpdated(Environment state)
+	{
+		double now = state.schedule.getTime();
+		if(members.numObjs < state.maxGroupSize) return;
+		
+		//First, we create a new daughter group near the current group's location (same logic as original fission() method)
+		
+		Group newGroup = new Group(state); //generate a new empty group
+		Int2D currentLocation = state.sparseSpace.getObjectLocation(this); //the new group's location is the same as the group that runs the group.fission()
+		int dx = state.random.nextInt(5) - 2; //-2 to +2 for new x-axis value
+		int dy = state.random.nextInt(5) - 2; //same for y-axis
+		Int2D newLocation = new Int2D(
+				Math.min(state.gridWidth - 1, Math.max(0, currentLocation.x + dx)),
+				Math.min(state.gridHeight - 1, Math.max(0, currentLocation.y + dy))
+				); //determines new location for the new group
+		state.sparseSpace.setObjectLocation(newGroup, newLocation); //then sets new groups new location
+		newGroup.x = newLocation.x;
+		newGroup.y = newLocation.y;
+		newGroup.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 1, newGroup, state.scheduleTimeInterval); //adds the new group to the schedule
+		
+		//now, let's partition members by category. The only individuals who preferentially migrate now are juveniles, who go to their mom's group
+		
+		Bag adultFemales = new Bag();
+		Bag adultMales = new Bag();
+		Bag juveniles = new Bag();
+		
+		for(int i = 0; i < members.numObjs; i++)
+		{
+			Baboon b = (Baboon) members.objs[i];
+			if (b.isJuvenile)
+			{
+				juveniles.add(b);
+			}
+			else if(b.isMale())
+			{
+				adultMales.add(b);
+			}
+			else
+			{
+				adultFemales.add(b);
+			}
+		}
+		
+		//Next, we randomly split Adult Females between the old and new group
+		adultFemales.shuffle(state.random);
+		int femSplit = adultFemales.numObjs / 2;
+		for(int i = 0; i < adultFemales.numObjs; i++)
+		{
+			Baboon f = (Baboon) adultFemales.objs[i];
+			Group target = (i < femSplit) ? newGroup : this;
+			if(target != this)
+			{
+				members.remove(f);
+				f.setGroup(target);
+				target.members.add(f);
+				f.x = target.x;
+				f.y = target.y;
+				if(f.event == null)
+				{
+					f.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, f, state.scheduleTimeInterval);
+				}
+			}
+		}
+		
+		//Same procedure as female splitting but now for adult males
+		adultMales.shuffle(state.random);
+	    int maleSplit = adultMales.numObjs / 2;
+	    for (int i = 0; i < adultMales.numObjs; i++) 
+	    {
+	        Baboon m = (Baboon) adultMales.objs[i];
+	        Group target = (i < maleSplit) ? newGroup : this;
+	        if (target != this) 
+	        {
+	            members.remove(m);
+	            target.members.add(m);
+	            m.setGroup(target);
+	            m.x = target.x; m.y = target.y;
+	            if (m.event == null)
+	            {
+	                m.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, m, state.scheduleTimeInterval);
+	            }
+	        }
+	    }
+	    
+	    //Now we move juveniles into the group their mother joined. 99% of the time, juveniles will have mothers but if their mother dies before they mature
+	    //Or they are added to a group at simulation genesis without an adult female to be their mother, we will just have them randomly join a new group
+	    
+	    juveniles.shuffle(state.random);
+	    for (int i = 0; i < juveniles.numObjs; i++) 
+	    {
+	        Baboon j = (Baboon) juveniles.objs[i];
+
+	        // Mother’s destination group if available (after adults have been moved)
+	        Group motherGroup = (j.mother != null) ? j.mother.group : null;
+
+	        // Choose target: follow mom if possible; otherwise random split
+	        Group target = (motherGroup != null) ? motherGroup : (state.random.nextBoolean() ? newGroup : this);
+
+	        // Fallback if the chosen group is full (or null for any reason)
+	        if (target == null || (target.members != null && target.members.numObjs >= state.maxGroupSize)) 
+	        {
+	            target = (target == this) ? newGroup : this;
+	        }
+
+	        // Move between groups if needed
+	        if (target != this) 
+	        {
+	            members.remove(j);
+	            target.members.add(j);
+	            j.setGroup(target);
+	        }
+
+	        // Sync spatial coordinates to the target group's location
+	        j.x = target.x;
+	        j.y = target.y;
+
+	        // Ensure juvenile is scheduled
+	        if (j.event == null) 
+	        {
+	            j.event = state.schedule.scheduleRepeating(now + state.scheduleTimeInterval, 0, j, state.scheduleTimeInterval);
+	        }
+	    }
+	    
+	    //finally, we re-calculate the male dominance hierarchies of the old and new groups
+	    this.updateDominanceHierarchyArray();
+	    newGroup.updateDominanceHierarchyArray();
+		
+	}
 	
 	
 	//remove group from simulation
@@ -606,7 +742,7 @@ public class Group implements Steppable
 		if(die(eState))
 			return;
 		groupDisperse(eState);
-		fission(eState);
+		fissionUpdated(eState);
 		updateDominanceHierarchyArray();
 		coalitionGame();
 	}
