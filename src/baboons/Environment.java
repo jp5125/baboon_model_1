@@ -156,6 +156,7 @@ public class Environment extends SimStateSweep implements Steppable
 						{
 							Baboon mom = adultFemales.get(random.nextInt(adultFemales.size())); //randomly select one as the mother
 							b.matrilineID = mom.matrilineID; //assign mother's matrilineID as new juvenile's matrilineID
+							b.mother = mom; //give 'mom' the mother pointer
 						}
 						else
 						{
@@ -186,6 +187,7 @@ public class Environment extends SimStateSweep implements Steppable
 					{
 						Baboon mom = adultFemales2.get(random.nextInt(adultFemales2.size()));
 						juv.matrilineID = mom.matrilineID;
+						juv.mother = mom;
 					}
 				}
 			}
@@ -253,6 +255,37 @@ public class Environment extends SimStateSweep implements Steppable
 			}
 		}
 		return nearestGroup;
+	}
+	
+	//utility method for returning bag of potential groups within moore's radius (moores neighborhood that expands out to the radius calculated for each migrating male agent) of focal group
+	public Bag findGroupWithinMooreRadius(int x, int y, int r)
+	{
+		Bag neighbors = sparseSpace.getMooreNeighbors(x,  y,  r,  sparseSpace.TOROIDAL, false);
+		
+		Bag groups = new Bag();
+		HashSet<Group> seen = new HashSet<>();
+		
+		if(neighbors != null)
+		{
+			for(int i = 0; i < neighbors.numObjs; i++)
+			{
+				Object o = neighbors.objs[i];
+				if(o instanceof Group)
+				{
+					Group g = (Group) o;
+					if(seen.add(g))
+					{
+						if(g.members != null && g.members.numObjs > 0 && g.members.numObjs < maxGroupSize)
+						{
+							groups.add(g);
+						}
+					}
+				}
+			}
+		}
+		
+		return groups;
+		
 	}
 	
 	//Utility method to get the current number of groups

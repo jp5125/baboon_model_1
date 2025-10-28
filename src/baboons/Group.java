@@ -47,6 +47,35 @@ public class Group implements Steppable
 		this.members = new Bag();
 	}
 	
+	//utility method to calculate the proportion of coalition gene carrying males to males without the gene. Used for visualization
+	public double getAdultMaleCoalitionFrequency()
+	{
+		int adultMales= 0; //number of adult males in this group
+		int carriers = 0; //number of males carrying the coaliton gene
+		
+		for(int i = 0; i < members.numObjs; i++)
+		{
+			Baboon b = (Baboon) members.objs[i];
+			if(b.isMale() && !b.isJuvenile)
+			{
+				adultMales++;
+				if(b.hasCoalitionGene)
+				{
+					carriers++;
+				}
+			}
+		}
+		if(adultMales == 0)
+		{
+			return 0.0;
+		}
+		else
+		{
+			return (carriers * 1.0 / adultMales);
+		}
+		
+	}
+	
 	//initial dominance hierarchy implementation, unsure of hidden bugs due to redrawing from a bag so this method was re-implemented using an ArrayList below
 	public void updateDominanceHierarchyBag() 
 	{

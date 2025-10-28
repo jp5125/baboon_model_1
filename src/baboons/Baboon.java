@@ -44,6 +44,7 @@ public class Baboon implements Steppable
 	public int senescentOffspring = 0; //tracks number of offspring sired when male is senescent
 	private static int nextID = 0;
 	public final int ID;
+	public Baboon mother;
 	
 	
 	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays, boolean isJuvenile)
@@ -57,6 +58,7 @@ public class Baboon implements Steppable
 		this.hasCoalitionGene = false;
 		this.fatherHasCoalitionGene = false;
 		this.ID = nextID++;
+		
 		
 		//Draw agents max age from a normal distribution (mean = 9125 days (25 years), SD = 1825 days (+- 5 years))
 		double lifespan = state.random.nextGaussian() * 1825.0 + 9125.0;
@@ -283,7 +285,7 @@ public class Baboon implements Steppable
 		boolean isJuvenile = true;
 		
 		Baboon newborn = new Baboon(state, newbornIsMale, group.x, group.y, initialAgeDays, isJuvenile); // Newborns are created and added to simulation at weaning (185 days post birth)
-		
+		newborn.mother = this; //set this female agent as the newborn's mother
 		newborn.matrilineID = this.matrilineID; //track the matriline of each baboon for group.fission()
 		
 		if(newbornIsMale) //decide if male will have coalition gene or not
@@ -350,7 +352,7 @@ public class Baboon implements Steppable
 			}
 			else
 			{
-			maleImmigration();
+			maleImmigrationNew();
 			}
 		}
 		else //for female agents, initialize their estrous cycle
@@ -396,6 +398,9 @@ public class Baboon implements Steppable
 	
 	
 	//dispersal method for adult males
+	/*
+	 * Old male dispersal method, rewrote it in maleImmigrationNew() to stop clustering of agents that immigrate too locally
+	 * 
 	public void maleImmigration()
 	{
 		Group oldGroup = this.group;
@@ -421,6 +426,47 @@ public class Baboon implements Steppable
 			oldGroup.updateDominanceHierarchyArray();
 			newGroup.updateDominanceHierarchyArray();
 		}
+	}
+	*/
+	
+	public void maleImmigrationNew()
+	{
+		Group natalGroup = this.group; //assign a pointer to the group the male is migrating out of at maturity
+		
+		//Draw initial search radius randomly between 1-25
+		int initialRadius = state.random.nextInt(25) + 1;
+		
+		Group newGroup = null;
+		int maxDim = Math.max(state.sparseSpace.getWidth(), state.sparseSpace.getHeight());
+		
+		for (int r = initialRadius; r <= maxDim; r++)
+		{
+			Bag candidates = state.findGroupWithinMooreRadius(x,y,r);
+			if(candidates != null && candidates.numObjs > 0)
+			{
+				newGroup = (Group)candidates.get(state.random.nextInt(candidates.numObjs));
+				break;
+			}
+		}
+		
+		if(newGroup == null) return;
+		
+		//move to new group
+		if(group != null)
+		{
+			group.members.remove(this);
+		}
+		this.x = newGroup.x;
+		this.y = newGroup.y;
+		setGroup(newGroup);
+		newGroup.members.add(this);
+		
+		//update dominance hierarchies
+		if(natalGroup != null)
+		{
+			natalGroup.updateDominanceHierarchyArray();
+		}
+		newGroup.updateDominanceHierarchyArray();
 	}
 	
 	public double calculateFightingAbility()
