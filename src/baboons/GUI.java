@@ -46,7 +46,7 @@ public class GUI extends GUIStateSweep
 		
 		// TODO Auto-generated method stub
 		GUI.initialize(Environment.class, Experimenter.class, GUI.class, 400, 400, 
-				Color.WHITE, Color.BLUE, true, Spaces.SPARSE);
+				Color.WHITE, Color.BLUE, false, Spaces.SPARSE);
 
 	}
 

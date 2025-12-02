@@ -76,6 +76,7 @@ public class Group implements Steppable
 		
 	}
 	
+	
 	//initial dominance hierarchy implementation, unsure of hidden bugs due to redrawing from a bag so this method was re-implemented using an ArrayList below
 	public void updateDominanceHierarchyBag() 
 	{
@@ -367,6 +368,15 @@ public class Group implements Steppable
 					applyFightingCost(male1);
 					applyFightingCost(male2);
 				}
+				else
+				{
+					mortalWoundConsort(currentConsort);
+					mortalWoundCoalition(male1);
+					mortalWoundCoalition(male2);
+					applyFightingCost(currentConsort);
+					applyFightingCost(male1);
+					applyFightingCost(male2);
+				}
 			}
 		}
 	}
@@ -390,7 +400,7 @@ public class Group implements Steppable
 	
 	public void mortalWoundCoalition(Baboon male)
 	{
-		double probMortalWound = 0.05;
+		double probMortalWound = 0.00;
 		
 		if(state.random.nextDouble() < probMortalWound)
 		{
@@ -722,6 +732,64 @@ public class Group implements Steppable
 	}
 	
 	
+	/*
+	 * Color-gradient for proportion of cooperators in a given group
+	 * 
+	 * 0.0 = Red
+	 * 0.25 = Orange
+	 * 0.5 = Yellow
+	 * 0.75 = Yellow-Green
+	 * 1.0 = Green
+	 */
+	public void groupColor(Environment state)
+	{
+		
+		//first, we need to collect all the adult males in the group
+		int malesWithGene = 0;
+		int malesWithoutGene = 0;
+		
+		
+		//then we separate by whether or not they have the coalition gene
+		for(int i = 0; i < members.numObjs;i++)
+		{
+			Baboon b = (Baboon) members.objs[i]; 
+			
+			if(b.isMale() && !b.isJuvenile)
+			{
+				if(b.hasCoalitionGene)
+				{
+					malesWithGene++;
+				}
+				else
+				{
+					malesWithoutGene++;
+				}
+			}	
+		}
+		
+		//calculate the frequency of the coalition gene holders and non gene holders
+		int totalMales = malesWithGene + malesWithoutGene;
+		
+		if(totalMales == 0)
+		{
+			return;
+		}
+		float proportionCooperator = (float) malesWithGene / (float) totalMales;
+		proportionCooperator = Math.max(0.0f, Math.min(1.0f, proportionCooperator)); 
+		
+		//Use this to color the groups. 
+		float red = Math.min(1.0f, 2.0f * (1-proportionCooperator));
+		float green = Math.min(1.0f, 2.0f * proportionCooperator);
+		float blue =  0.0f;
+		float opacity = (float) 1.0;
+		Color c = new Color(red,green,blue,opacity);
+		OvalPortrayal2D o = new OvalPortrayal2D(c);
+		GUIStateSweep guiState = (GUIStateSweep)state.gui;
+		guiState.agentsPortrayalSparseGrid.setPortrayalForObject(this, o);
+		
+	}
+	
+	
 	//remove group from simulation
 	public boolean die(Environment state)
 	{
@@ -744,6 +812,7 @@ public class Group implements Steppable
 		groupDisperse(eState);
 		fissionUpdated(eState);
 		updateDominanceHierarchyArray();
+		groupColor(eState);
 		coalitionGame();
 	}
 }
