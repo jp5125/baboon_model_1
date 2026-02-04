@@ -46,7 +46,7 @@ public class Baboon implements Steppable
 	public final int ID;
 	public Baboon mother;
 	double probMortalWoundConsort = 0.00;
-	double probMortalWoundCoalition = 0.05;
+	double probMortalWoundCoalition = 0.02;
 	
 	
 	public Baboon(Environment state, boolean male, int x, int y, int initialAgeDays, boolean isJuvenile)
