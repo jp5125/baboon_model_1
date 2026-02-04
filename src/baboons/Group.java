@@ -23,6 +23,9 @@ public class Group implements Steppable
 	ArrayList <Baboon> consortMales = new ArrayList<>();
 	Bag coalitionMales = new Bag();
 	
+	double cost = 0.01; //fighting ability cost for participating in a fight
+	
+	
 
 	
 	public Group(Environment state, int x, int y, Bag members)
@@ -85,7 +88,7 @@ public class Group implements Steppable
 		for(int i = 0; i < members.numObjs; i++) //for each agent in the group (object in the members bag)
 		{
 			Baboon b = (Baboon)members.objs[i]; //baboon b is a an object in the members bag cast as a baboon instance
-			if (b.isMale()) //if the boolean state variable "Male" for b equals TRUE
+			if (b.isMale() && !b.isJuvenile) //if the boolean state variable "Male" for b equals TRUE
 			{
 				males.add(b); //add that individual to the new bag "males"
 			}
@@ -364,33 +367,38 @@ public class Group implements Steppable
 					mortalWoundConsort(currentConsort);
 					mortalWoundCoalition(male1);
 					mortalWoundCoalition(male2);
+					
+					/*
 					applyFightingCost(currentConsort);
 					applyFightingCost(male1);
 					applyFightingCost(male2);
+					*/
 				}
 				else
 				{
 					mortalWoundConsort(currentConsort);
 					mortalWoundCoalition(male1);
 					mortalWoundCoalition(male2);
+					/*
 					applyFightingCost(currentConsort);
 					applyFightingCost(male1);
 					applyFightingCost(male2);
+					*/
 				}
 			}
 		}
 	}
 	
 	//utility method for cost to fighting
-	public void applyFightingCost(Baboon male)
+	public void applyFightingCost(Baboon male, double fightingCost)
 	{
-		double cost = 0.01; //1% of fighting ability decreased after a fight
-		male.fightingAbility = Math.max(0, male.fightingAbility - cost); 
+		fightingCost = cost; 
+		male.fightingAbility = Math.max(0, male.fightingAbility - fightingCost); 
 	}
 	
 	public void mortalWoundConsort(Baboon male)
 	{
-		double probMortalWound = 0.00;
+		double probMortalWound = male.probMortalWoundConsort;
 		
 		if(state.random.nextDouble() < probMortalWound)
 		{
@@ -400,7 +408,7 @@ public class Group implements Steppable
 	
 	public void mortalWoundCoalition(Baboon male)
 	{
-		double probMortalWound = 0.00;
+		double probMortalWound = male.probMortalWoundCoalition;
 		
 		if(state.random.nextDouble() < probMortalWound)
 		{
